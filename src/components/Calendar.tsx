@@ -12,10 +12,10 @@ import {
   endOfWeek
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db, auth } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { formatWhatsAppLink, getAppointmentReminder } from '../lib/utils';
 
 export default function AppointmentCalendar() {
@@ -29,6 +29,7 @@ export default function AppointmentCalendar() {
     phone: '',
     make: '',
     model: '',
+    address: '',
     serviceType: '',
     time: '09:00',
     notes: ''
@@ -53,6 +54,28 @@ export default function AppointmentCalendar() {
       // For simplicity and following the user request closely, we'll store the strings
       // but ensure we meet the "Save/Show" requirement.
       
+      // 1. Sync Client Data
+      const clientQuery = query(collection(db, 'clients'), where('phone', '==', formData.phone));
+      const clientSnap = await getDocs(clientQuery);
+      
+      const clientData = {
+        name: formData.clientName,
+        phone: formData.phone,
+        vehicleMake: formData.make,
+        vehicleModel: formData.model,
+        address: formData.address,
+        updatedAt: serverTimestamp()
+      };
+
+      if (clientSnap.empty) {
+        await addDoc(collection(db, 'clients'), {
+          ...clientData,
+          createdAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(doc(db, 'clients', clientSnap.docs[0].id), clientData);
+      }
+
       const appointmentDate = new Date(selectedDay);
       const [hours, minutes] = formData.time.split(':');
       appointmentDate.setHours(parseInt(hours), parseInt(minutes));
@@ -62,6 +85,7 @@ export default function AppointmentCalendar() {
         phone: formData.phone,
         vehicleInfo: `${formData.make} ${formData.model}`,
         serviceType: formData.serviceType,
+        address: formData.address,
         date: appointmentDate.toISOString(),
         time: formData.time,
         status: 'pending',
@@ -88,6 +112,7 @@ export default function AppointmentCalendar() {
         phone: '',
         make: '',
         model: '',
+        address: '',
         serviceType: '',
         time: '09:00',
         notes: ''
@@ -259,6 +284,20 @@ export default function AppointmentCalendar() {
                   </div>
                 </div>
 
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Domicilio del Cliente</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                    <input 
+                      required
+                      value={formData.address}
+                      onChange={e => setFormData({...formData, address: e.target.value})}
+                      className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                      placeholder="Calle 123, Col. Centro"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Servicio</label>
@@ -312,6 +351,16 @@ export default function AppointmentCalendar() {
                   <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-blue-50 px-2 py-0.5 rounded">
                     {app.time || '00:00'}
                   </span>
+                  <button 
+                    onClick={async () => {
+                      if(confirm("¿Borrar cita?")) {
+                        await deleteDoc(doc(db, 'appointments', app.id));
+                      }
+                    }}
+                    className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 <h4 className="font-bold text-dark leading-tight mb-1">{app.serviceType}</h4>
                 <p className="text-xs text-gray-500 mb-4 font-medium">{app.vehicleInfo}</p>

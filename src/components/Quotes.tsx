@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Send, Download, FileText, CheckCircle, MessageCircle, Search, Eye, Edit2, ChevronLeft, User, Phone, Car, Clock } from 'lucide-react';
+import { Plus, Trash2, Send, Download, FileText, CheckCircle, MessageCircle, Search, Eye, Edit2, ChevronLeft, User, Phone, Car, Clock, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { geminiService } from '../services/geminiService';
 import { formatWhatsAppLink } from '../lib/utils';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy, getDocs, where, deleteDoc } from 'firebase/firestore';
 
 export default function Quotes() {
   const [view, setView] = useState<'list' | 'form' | 'details'>('list');
@@ -17,6 +17,7 @@ export default function Quotes() {
   const [loading, setLoading] = useState(false);
   const [clientName, setClientName] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [vehicleMake, setVehicleMake] = useState('');
   const [vehicleModel, setVehicleModel] = useState('');
   const [serviceType, setServiceType] = useState('');
@@ -53,6 +54,7 @@ export default function Quotes() {
     setItems([{ description: '', quantity: 1, price: 0 }]);
     setClientName('');
     setPhone('');
+    setAddress('');
     setVehicleMake('');
     setVehicleModel('');
     setServiceType('');
@@ -86,9 +88,32 @@ export default function Quotes() {
     if (!clientName || !phone) return alert("Nombre y teléfono son obligatorios");
     setLoading(true);
     try {
+      // Sync Client Data
+      const clientQuery = query(collection(db, 'clients'), where('phone', '==', phone));
+      const clientSnap = await getDocs(clientQuery);
+      
+      const clientData = {
+        name: clientName,
+        phone: phone,
+        vehicleMake: vehicleMake,
+        vehicleModel: vehicleModel,
+        address: address,
+        updatedAt: serverTimestamp()
+      };
+
+      if (clientSnap.empty) {
+        await addDoc(collection(db, 'clients'), {
+          ...clientData,
+          createdAt: serverTimestamp()
+        });
+      } else {
+        await updateDoc(doc(db, 'clients', clientSnap.docs[0].id), clientData);
+      }
+
       const quoteData = {
         clientName,
         phone,
+        address,
         vehicleMake,
         vehicleModel,
         serviceType,
@@ -132,6 +157,7 @@ export default function Quotes() {
     setEditingId(quote.id);
     setClientName(quote.clientName);
     setPhone(quote.phone);
+    setAddress(quote.address || '');
     setVehicleMake(quote.vehicleMake);
     setVehicleModel(quote.vehicleModel);
     setServiceType(quote.serviceType);
@@ -191,29 +217,42 @@ export default function Quotes() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Marca Vehículo</label>
-                  <div className="relative">
-                    <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Marca Vehículo</label>
+                    <div className="relative">
+                      <Car className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input 
+                        value={vehicleMake}
+                        onChange={(e) => setVehicleMake(e.target.value)}
+                        placeholder="Toyota"
+                        className="w-full bg-gray-50 border border-gray-100 rounded-lg py-3 pl-10 pr-3 text-sm font-medium focus:ring-1 focus:ring-primary outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Submarca/Modelo</label>
                     <input 
-                      value={vehicleMake}
-                      onChange={(e) => setVehicleMake(e.target.value)}
-                      placeholder="Toyota"
+                      value={vehicleModel}
+                      onChange={(e) => setVehicleModel(e.target.value)}
+                      placeholder="Corolla"
+                      className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm font-medium focus:ring-1 focus:ring-primary outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Domicilio del Cliente</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input 
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Calle 123, Col. Centro"
                       className="w-full bg-gray-50 border border-gray-100 rounded-lg py-3 pl-10 pr-3 text-sm font-medium focus:ring-1 focus:ring-primary outline-none"
                     />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Submarca/Modelo</label>
-                  <input 
-                    value={vehicleModel}
-                    onChange={(e) => setVehicleModel(e.target.value)}
-                    placeholder="Corolla"
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm font-medium focus:ring-1 focus:ring-primary outline-none"
-                  />
-                </div>
-              </div>
 
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Servicio / Motivo</label>
@@ -398,6 +437,17 @@ export default function Quotes() {
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if(confirm("¿Borrar presupuesto?")) {
+                            await deleteDoc(doc(db, 'quotes', quote.id));
+                          }
+                        }}
+                        className="p-2 text-dark hover:text-red-500 transition-colors"
+                        title="Borrar"
+                      >
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>

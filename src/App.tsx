@@ -4,8 +4,6 @@ import {
   Users, 
   Car, 
   ClipboardList, 
-  History, 
-  MessageSquare, 
   Camera, 
   Plus,
   Bell,
@@ -27,8 +25,6 @@ import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from
 import Dashboard from './components/Dashboard';
 import AppointmentCalendar from './components/Calendar';
 import ClientsList from './components/ClientsList';
-import ServiceHistory from './components/ServiceHistory';
-import AiAdmin from './components/AiAdmin';
 import Quotes from './components/Quotes';
 import ServiceEvidence from './components/ServiceEvidence';
 import ServiceCatalog from './components/ServiceCatalog';
@@ -120,8 +116,6 @@ export default function App() {
               <NavItem icon={<Wrench />} label="Servicios" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
               <NavItem icon={<Camera />} label="Evidencia" active={activeTab === 'evidence'} onClick={() => setActiveTab('evidence')} />
               <NavItem icon={<Users />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
-              <NavItem icon={<History />} label="Historial" active={activeTab === 'history'} onClick={() => setActiveTab('history')} />
-              <NavItem icon={<MessageSquare />} label="Asistente IA" active={activeTab === 'ai'} onClick={() => setActiveTab('ai')} />
             </nav>
 
             <div className="p-6 border-t border-gray-800 mt-auto">
@@ -176,8 +170,6 @@ export default function App() {
               {activeTab === 'services' && <ServiceCatalog />}
               {activeTab === 'evidence' && <ServiceEvidence />}
               {activeTab === 'clients' && <ClientsList />}
-              {activeTab === 'history' && <ServiceHistory />}
-              {activeTab === 'ai' && <AiAdmin />}
             </motion.div>
           </AnimatePresence>
         </div>
