@@ -116,8 +116,8 @@ export default function ServiceCatalog() {
                 <Wrench className="w-5 h-5" />
               </div>
               <div className="flex gap-1">
-                <button onClick={() => handleEdit(service)} className="p-1.5 text-gray-400 hover:text-primary"><Edit2 className="w-4 h-4" /></button>
-                <button onClick={() => handleDelete(service.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                <button onClick={() => handleEdit(service)} className="p-1.5 text-dark hover:text-primary"><Edit2 className="w-4 h-4" /></button>
+                <button onClick={() => handleDelete(service.id)} className="p-1.5 text-dark hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
             <h3 className="font-bold text-dark mb-1">{service.name}</h3>

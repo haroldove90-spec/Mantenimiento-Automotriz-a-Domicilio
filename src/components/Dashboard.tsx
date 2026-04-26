@@ -83,16 +83,16 @@ export default function Dashboard() {
             Evidencia Reciente
             <span className="text-[10px] text-gray-400">Sincronizado</span>
           </h3>
-          <div className="grid grid-cols-2 gap-2">
-            {[1, 2, 3].map((_, i) => (
-              <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative group">
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/40 text-white text-[10px] font-bold transition-opacity cursor-pointer">ENVIAR WA</div>
+              <div className="grid grid-cols-2 gap-2">
+                {[1, 2, 3].map((_, i) => (
+                  <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden relative group">
+                    <div className="absolute inset-x-0 bottom-0 py-2 flex items-center justify-center bg-dark/80 text-white text-[9px] font-bold uppercase tracking-widest cursor-pointer">ENVIAR WA</div>
+                  </div>
+                ))}
+                <div className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors bg-white shadow-inner">
+                  <Plus className="text-xl text-dark" />
+                </div>
               </div>
-            ))}
-            <div className="aspect-square border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors">
-              <Plus className="text-xl text-gray-300" />
-            </div>
-          </div>
         </div>
 
         {/* Quick History Search */}

@@ -66,7 +66,7 @@ export default function App() {
     );
   }
 
-  if (!user) {
+  if (!user && false) { // Disable login check for direct access
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-surface p-4">
         <motion.div 
@@ -157,9 +157,6 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button className="p-2 text-gray-400 hover:text-dark transition-colors">
               <Bell className="w-4 h-4" />
-            </button>
-            <button className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition-all">
-              <Plus className="w-4 h-4" /> Nuevo Servicio
             </button>
           </div>
         </header>

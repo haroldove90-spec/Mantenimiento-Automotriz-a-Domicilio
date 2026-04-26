@@ -101,12 +101,19 @@ export default function ServiceEvidence() {
             className="aspect-square rounded-xl overflow-hidden relative group border border-gray-100 shadow-sm"
           >
             <img src={photo} alt={`Evidence ${i}`} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-dark/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute inset-x-0 bottom-0 p-2 bg-dark/60 flex items-center justify-center gap-2">
               <button 
                 onClick={() => setPhotos(photos.filter((_, idx) => idx !== i))}
-                className="p-2 bg-white/20 backdrop-blur-md rounded-lg text-white hover:bg-red-500 transition-colors"
+                className="p-1.5 bg-red-500 rounded text-white hover:bg-red-600 transition-colors"
+                title="Eliminar"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+              <button 
+                className="p-1.5 bg-white/20 rounded text-white hover:bg-white/30 transition-colors"
+                title="Ver"
+              >
+                <Share2 className="w-3.5 h-3.5" />
               </button>
             </div>
           </motion.div>

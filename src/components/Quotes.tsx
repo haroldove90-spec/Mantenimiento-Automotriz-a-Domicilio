@@ -387,14 +387,14 @@ export default function Quotes() {
                     <div className="flex justify-end gap-2">
                        <button 
                         onClick={() => handleResend(quote)}
-                        className="p-2 text-gray-400 hover:text-green-500 transition-colors"
+                        className="p-2 text-dark hover:text-green-600 transition-colors"
                         title="Reenviar WhatsApp"
                       >
                         <MessageCircle className="w-4 h-4" />
                       </button>
                       <button 
                         onClick={() => handleEdit(quote)}
-                        className="p-2 text-gray-400 hover:text-primary transition-colors"
+                        className="p-2 text-dark hover:text-primary transition-colors"
                         title="Editar"
                       >
                         <Edit2 className="w-4 h-4" />
