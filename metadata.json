@@ -1,0 +1,6 @@
+{
+  "name": "AutoDoc Home",
+  "description": "Dashboard inteligente para taller mecánico a domicilio con gestión de citas, presupuestos y seguimiento asistido por IA.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}

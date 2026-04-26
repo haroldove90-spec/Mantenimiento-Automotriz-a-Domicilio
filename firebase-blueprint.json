@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A scheduled service for a vehicle.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "in_progress", "completed", "cancelled"] },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "estimatedCost": { "type": "number" },
+        "whatsappSent": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "vehicleId", "serviceType", "status", "date"]
+    },
+    "Client": {
+      "title": "Client",
+      "description": "Customer information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string", "description": "WhatsApp number" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "phone"]
+    },
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Vehicle details belonging to a client.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "plate": { "type": "string" },
+        "vin": { "type": "string" },
+        "color": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "make", "model"]
+    },
+    "Quote": {
+      "title": "Quote",
+      "description": "Budget estimation for a service.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "phone": { "type": "string" },
+        "vehicleMake": { "type": "string" },
+        "vehicleModel": { "type": "string" },
+        "serviceType": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "description": { "type": "string" },
+              "quantity": { "type": "number" },
+              "price": { "type": "number" }
+            }
+          }
+        },
+        "total": { "type": "number" },
+        "currency": { "type": "string", "default": "MXN" },
+        "status": { "type": "string", "enum": ["draft", "sent", "accepted", "declined"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Service": {
+      "title": "Service Offered",
+      "description": "A service provided by the workshop.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "basePrice": { "type": "number" },
+        "estimatedDuration": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["name", "basePrice"]
+    },
+    "ServiceRecord": {
+      "title": "Service Record",
+      "description": "History of a completed service.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "clientId": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "summary": { "type": "string" },
+        "photos": { "type": "array", "items": { "type": "string" }, "description": "URLs to images" },
+        "maintenanceReminders": { "type": "array", "items": { "type": "string" } },
+        "whatsappEvidenceSent": { "type": "boolean" }
+      }
+    }
+  },
+  "firestore": {
+    "appointments": { "schema": "Appointment", "description": "Scheduled appointments" },
+    "clients": { "schema": "Client", "description": "Customer registry" },
+    "vehicles": { "schema": "Vehicle", "description": "Vehicle registry" },
+    "quotes": { "schema": "Quote", "description": "Budget estimations" },
+    "services": { "schema": "Service", "description": "Offered services catalog" },
+    "service_records": { "schema": "ServiceRecord", "description": "Completed service history" }
+  }
+}

@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Since this is a specialized "Admin" app for a single business owner, 
+    // we'll assume the authenticated user is the manager for now.
+    // In a real multi-tenant app, we'd check roles.
+    
+    match /clients/{clientId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /vehicles/{vehicleId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /appointments/{appointmentId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /quotes/{quoteId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /services/{serviceId} {
+      allow read, write: if isSignedIn();
+    }
+    
+    match /service_records/{recordId} {
+      allow read, write: if isSignedIn();
+    }
+  }
+}
