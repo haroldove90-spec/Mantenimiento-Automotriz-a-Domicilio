@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Search, Wrench, Clock, DollarSign } from 'lucide-react';
+import { Plus, Trash2, Edit2, Search, Wrench, Clock, DollarSign, User, Phone, MapPin, Car } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
 
 export default function ServiceCatalog() {
   const [services, setServices] = useState<any[]>([]);
@@ -16,7 +16,11 @@ export default function ServiceCatalog() {
     description: '',
     basePrice: '',
     estimatedDuration: '',
-    category: 'Mantenimiento'
+    category: 'Mantenimiento',
+    clientName: '',
+    phone: '',
+    address: '',
+    vehicleInfo: ''
   });
 
   useEffect(() => {
@@ -31,6 +35,30 @@ export default function ServiceCatalog() {
     e.preventDefault();
     setLoading(true);
     try {
+      // 1. Sync Client Data (Automatic registration)
+      if (formData.clientName && formData.phone) {
+        const clientQuery = query(collection(db, 'clients'), where('phone', '==', formData.phone));
+        const clientSnap = await getDocs(clientQuery);
+        
+        const clientData = {
+          name: formData.clientName,
+          phone: formData.phone,
+          address: formData.address,
+          vehicleInfo: formData.vehicleInfo,
+          updatedAt: serverTimestamp()
+        };
+
+        if (clientSnap.empty) {
+          await addDoc(collection(db, 'clients'), {
+            ...clientData,
+            createdAt: serverTimestamp()
+          });
+        } else {
+          await updateDoc(doc(db, 'clients', clientSnap.docs[0].id), clientData);
+        }
+      }
+
+      // 2. Save Service Record
       const data = {
         ...formData,
         basePrice: parseFloat(formData.basePrice as string),
@@ -45,7 +73,17 @@ export default function ServiceCatalog() {
 
       setShowForm(false);
       setEditingService(null);
-      setFormData({ name: '', description: '', basePrice: '', estimatedDuration: '', category: 'Mantenimiento' });
+      setFormData({ 
+        name: '', 
+        description: '', 
+        basePrice: '', 
+        estimatedDuration: '', 
+        category: 'Mantenimiento',
+        clientName: '',
+        phone: '',
+        address: '',
+        vehicleInfo: ''
+      });
     } catch (error) {
       console.error("Error saving service:", error);
       alert("Error al guardar el servicio");
@@ -61,7 +99,11 @@ export default function ServiceCatalog() {
       description: service.description || '',
       basePrice: service.basePrice.toString(),
       estimatedDuration: service.estimatedDuration || '',
-      category: service.category || 'Mantenimiento'
+      category: service.category || 'Mantenimiento',
+      clientName: service.clientName || '',
+      phone: service.phone || '',
+      address: service.address || '',
+      vehicleInfo: service.vehicleInfo || ''
     });
     setShowForm(true);
   };
@@ -74,7 +116,8 @@ export default function ServiceCatalog() {
 
   const filteredServices = services.filter(s => 
     s.name.toLowerCase().includes(search.toLowerCase()) ||
-    s.category.toLowerCase().includes(search.toLowerCase())
+    (s.category && s.category.toLowerCase().includes(search.toLowerCase())) ||
+    (s.clientName && s.clientName.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -85,7 +128,7 @@ export default function ServiceCatalog() {
           <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Gestiona los servicios que ofrece tu taller</p>
         </div>
         <button 
-          onClick={() => { setEditingService(null); setFormData({ name: '', description: '', basePrice: '', estimatedDuration: '', category: 'Mantenimiento' }); setShowForm(true); }}
+          onClick={() => { setEditingService(null); setFormData({ name: '', description: '', basePrice: '', estimatedDuration: '', category: 'Mantenimiento', clientName: '', phone: '', address: '', vehicleInfo: '' }); setShowForm(true); }}
           className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
         >
           <Plus className="w-4 h-4" /> Nuevo Servicio
@@ -121,6 +164,11 @@ export default function ServiceCatalog() {
               </div>
             </div>
             <h3 className="font-bold text-dark mb-1">{service.name}</h3>
+            {service.clientName && (
+              <p className="text-[10px] text-primary font-bold uppercase tracking-widest mb-2 flex items-center gap-1">
+                <User className="w-2.5 h-2.5" /> {service.clientName}
+              </p>
+            )}
             <p className="text-xs text-gray-500 line-clamp-2 h-8 mb-4">{service.description}</p>
             
             <div className="flex items-center justify-between pt-4 border-t border-gray-50">
@@ -145,54 +193,103 @@ export default function ServiceCatalog() {
               className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
             >
               <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50">
-                <h3 className="font-bold text-dark">{editingService ? 'Editar Servicio' : 'Nuevo Servicio'}</h3>
+                <h3 className="font-bold text-dark">{editingService ? 'Editar Registro' : 'Nuevo Registro de Servicio'}</h3>
                 <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-dark">×</button>
               </div>
-              <form onSubmit={handleSave} className="p-6 space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Nombre del Servicio</label>
-                  <input 
-                    required
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none"
-                    placeholder="Ej: Alineación y Balanceo"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Descripción</label>
-                  <textarea 
-                    value={formData.description}
-                    onChange={e => setFormData({...formData, description: e.target.value})}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none h-24 resize-none"
-                    placeholder="Detalles sobre el servicio..."
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Precio Base (MXN)</label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <form onSubmit={handleSave} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                {/* Client Section */}
+                <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-50 space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <User className="w-3 h-3" /> Información del Cliente
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre</label>
                       <input 
-                        required
-                        type="number"
-                        value={formData.basePrice}
-                        onChange={e => setFormData({...formData, basePrice: e.target.value})}
-                        className="w-full bg-gray-50 border border-gray-100 rounded-lg py-3 pl-8 pr-3 text-sm focus:ring-1 focus:ring-primary outline-none"
-                        placeholder="0.00"
+                        value={formData.clientName}
+                        onChange={e => setFormData({...formData, clientName: e.target.value})}
+                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+                        placeholder="Juan Pérez"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">WhatsApp</label>
+                      <input 
+                        value={formData.phone}
+                        onChange={e => setFormData({...formData, phone: e.target.value})}
+                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+                        placeholder="5512345678"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Vehículo</label>
+                      <input 
+                        value={formData.vehicleInfo}
+                        onChange={e => setFormData({...formData, vehicleInfo: e.target.value})}
+                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+                        placeholder="Marca y Modelo"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Dirección</label>
+                      <input 
+                        value={formData.address}
+                        onChange={e => setFormData({...formData, address: e.target.value})}
+                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
+                        placeholder="Calle, Colonia, etc."
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-4 pt-2">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Detalles del Trabajo</h4>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Duración Est.</label>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Nombre del Servicio</label>
                     <input 
-                      value={formData.estimatedDuration}
-                      onChange={e => setFormData({...formData, estimatedDuration: e.target.value})}
+                      required
+                      value={formData.name}
+                      onChange={e => setFormData({...formData, name: e.target.value})}
                       className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none"
-                      placeholder="Ej: 1 hr"
+                      placeholder="Ej: Alineación y Balanceo"
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Descripción</label>
+                    <textarea 
+                      value={formData.description}
+                      onChange={e => setFormData({...formData, description: e.target.value})}
+                      className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none h-20 resize-none"
+                      placeholder="Detalles sobre el servicio..."
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Precio Base (MXN)</label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input 
+                          required
+                          type="number"
+                          value={formData.basePrice}
+                          onChange={e => setFormData({...formData, basePrice: e.target.value})}
+                          className="w-full bg-gray-50 border border-gray-100 rounded-lg py-3 pl-8 pr-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Duración Est.</label>
+                      <input 
+                        value={formData.estimatedDuration}
+                        onChange={e => setFormData({...formData, estimatedDuration: e.target.value})}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                        placeholder="Ej: 1 hr"
+                      />
+                    </div>
+                  </div>
                 </div>
+
                 <div className="pt-4 flex gap-3">
                   <button 
                     type="button" 
@@ -204,9 +301,9 @@ export default function ServiceCatalog() {
                   <button 
                     disabled={loading}
                     type="submit"
-                    className="flex-1 bg-primary text-white py-3 rounded-lg font-bold hover:bg-blue-600 transition-all text-sm shadow-sm"
+                    className="flex-1 bg-dark text-white py-3 rounded-lg font-bold hover:bg-gray-800 transition-all text-sm shadow-sm"
                   >
-                    {loading ? 'Guardando...' : 'Guardar Servicio'}
+                    {loading ? 'Guardando...' : 'Guardar y Sincronizar'}
                   </button>
                 </div>
               </form>
