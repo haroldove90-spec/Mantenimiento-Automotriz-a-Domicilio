@@ -72,7 +72,7 @@ export default function Settings() {
             <div className="space-y-2">
               <label className="text-xs font-bold text-gray-400 uppercase">Logo de la Empresa</label>
               <div className="flex gap-4 items-center">
-                <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200 overflow-hidden shrink-0">
+                <div className="w-24 h-24 flex items-center justify-center overflow-hidden shrink-0">
                   <img src={config.logo_url} alt="Logo" className="w-full h-full object-contain" onError={(e: any) => e.target.src = 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png'} />
                 </div>
                 <div className="flex-1 space-y-2">

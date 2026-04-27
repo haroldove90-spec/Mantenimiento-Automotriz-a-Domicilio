@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { mockDb } from '../lib/mockData';
+import { loadLogoToDoc } from '../lib/pdfUtils';
 
 export default function ClientsList() {
   const [clients, setClients] = useState<any[]>([]);
@@ -95,11 +96,16 @@ export default function ClientsList() {
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (!selectedClient) return;
     const doc = new jsPDF() as any;
     
-    doc.setFontSize(20);
+    const settings = await mockDb.get('settings');
+    const config = settings?.[0];
+    
+    if (config?.logo_url) {
+      await loadLogoToDoc(doc, config.logo_url);
+    }
     doc.text("Historial de Cliente", 14, 22);
     
     doc.setFontSize(10);

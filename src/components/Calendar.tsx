@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { formatWhatsAppLink, getAppointmentReminder } from '../lib/utils';
 import { mockDb } from '../lib/mockData';
 import { jsPDF } from 'jspdf';
+import { loadLogoToDoc } from '../lib/pdfUtils';
 import 'jspdf-autotable';
 
 export default function AppointmentCalendar() {
@@ -139,11 +140,11 @@ export default function AppointmentCalendar() {
     end: endDate,
   });
 
-  const exportAllToPDF = () => {
+  const exportAllToPDF = async () => {
     const doc = new jsPDF() as any;
     
     if (config?.logo_url) {
-      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+      await loadLogoToDoc(doc, config.logo_url);
     }
     
     doc.setFontSize(20);
@@ -181,10 +182,10 @@ export default function AppointmentCalendar() {
     window.open(waLink, '_blank');
   };
 
-  const exportSingleToPDF = (app: any) => {
+  const exportSingleToPDF = async (app: any) => {
     const doc = new jsPDF() as any;
     if (config?.logo_url) {
-      doc.addImage(config.logo_url, 'PNG', 14, 10, 15, 15);
+      await loadLogoToDoc(doc, config.logo_url);
     }
     doc.setFontSize(18);
     doc.text(config?.app_name || "Tafer Servicios", 35, 20);

@@ -3,6 +3,7 @@ import { Camera, Plus, Trash2, CheckCircle, Clock, X, User as UserIcon, Car, Map
 import { motion, AnimatePresence } from 'motion/react';
 import { mockDb } from '../lib/mockData';
 import { jsPDF } from 'jspdf';
+import { loadLogoToDoc } from '../lib/pdfUtils';
 
 export default function CarReception() {
   const [view, setView] = useState<'list' | 'form'>('list');
@@ -42,11 +43,11 @@ export default function CarReception() {
     fetch();
   }, []);
 
-  const exportAllToPDF = () => {
+  const exportAllToPDF = async () => {
     const doc = new jsPDF() as any;
     
     if (config?.logo_url) {
-      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+      await loadLogoToDoc(doc, config.logo_url);
     }
 
     doc.setFontSize(20);
@@ -162,11 +163,11 @@ export default function CarReception() {
     setReceptions(data);
   };
 
-  const exportPDF = (service: any) => {
+  const exportPDF = async (service: any) => {
     const doc = new jsPDF() as any;
     
     if (config?.logo_url) {
-      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+      await loadLogoToDoc(doc, config.logo_url);
     }
 
     doc.setFontSize(20);

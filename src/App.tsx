@@ -96,21 +96,18 @@ export default function App() {
       <div className="flex h-screen bg-surface overflow-hidden font-sans text-dark relative flex-col lg:flex-row">
       {/* Mobile Nav Bar */}
       <div 
-        className="lg:hidden h-16 bg-white border-b border-gray-100 px-4 flex items-center justify-between z-50 sticky top-0"
-        style={{ borderBottomColor: config ? `${navColor}10` : undefined }}
+        className="lg:hidden h-14 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 flex items-center justify-between z-50 sticky top-0"
       >
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
-             <img 
+           <img 
                src={config?.logo_url || "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png"} 
                alt="Logo" 
-               className="w-full h-full object-contain" 
+               className="w-8 h-8 object-contain" 
              />
-          </div>
-          <span className="font-black text-sm tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+          <span className="font-black text-xs tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
         </div>
         <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-gray-50 rounded-lg">
-          <Menu className="w-6 h-6" />
+          <Menu className="w-5 h-5 text-gray-400" />
         </button>
       </div>
 
@@ -123,14 +120,14 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSidebarOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] lg:hidden"
+              className="fixed inset-0 bg-dark/20 backdrop-blur-[2px] z-[60] lg:hidden"
             />
             <motion.aside 
               initial={{ x: -280 }}
               animate={{ x: 0 }}
               exit={{ x: -280 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 left-0 bottom-0 w-72 z-[70] flex flex-col lg:hidden"
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="fixed top-0 left-0 bottom-0 w-72 z-[70] shadow-2xl lg:hidden"
               style={{ backgroundColor: navColor }}
             >
               <SidebarContent 
@@ -146,9 +143,9 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - More subtle persistent style */}
       <aside 
-        className="hidden lg:flex w-72 flex-col z-50 shrink-0 sticky top-0 h-screen shadow-2xl"
+        className="hidden lg:flex w-72 flex-col z-50 shrink-0 sticky top-0 h-screen border-r border-gray-100 shadow-[20px_0_40px_-20px_rgba(0,0,0,0.05)]"
         style={{ backgroundColor: navColor }}
       >
         <SidebarContent 
@@ -222,13 +219,11 @@ function SidebarContent({ activeTab, setActiveTab, user, handleLogout, onClose, 
     <div className="flex flex-col h-full text-white">
       <div className="p-8 border-b border-white/5 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="bg-white/10 w-10 h-10 rounded-xl flex items-center justify-center p-1 overflow-hidden">
-             <img 
-               src={config?.logo_url || "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png"} 
-               alt="Logo" 
-               className="w-full h-full object-contain filter brightness-0 invert" 
-             />
-          </div>
+          <img 
+            src={config?.logo_url || "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png"} 
+            alt="Logo" 
+            className="w-10 h-10 object-contain" 
+          />
           <span className="font-black text-xl tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
         </div>
         {onClose && (

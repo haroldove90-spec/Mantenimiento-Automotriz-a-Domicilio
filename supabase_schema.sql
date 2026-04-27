@@ -3,6 +3,9 @@
 -- Copia y pega esto en el "SQL Editor" de Supabase
 -- ==========================================
 
+-- NOTA IMPORTANTE: Si recibes un error sobre la columna "address", 
+-- este script la agregará automáticamente si ya existe la tabla.
+
 -- 1. Catálogo de Servicios
 CREATE TABLE IF NOT EXISTS services (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -18,12 +21,23 @@ CREATE TABLE IF NOT EXISTS services (
 CREATE TABLE IF NOT EXISTS clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ DEFAULT now(),
-  name TEXT NOT NULL,
+  name TEXT,
   phone TEXT,
   vehicle_make TEXT,
   vehicle_model TEXT,
   address TEXT
 );
+
+-- MIGRACIÓN: Asegurar que la columna 'address' existe en 'clients'
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='address') THEN
+        ALTER TABLE clients ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='name') THEN
+        ALTER TABLE clients ADD COLUMN name TEXT;
+    END IF;
+END $$;
 
 -- 3. Citas de Calendario
 CREATE TABLE IF NOT EXISTS appointments (
@@ -39,6 +53,14 @@ CREATE TABLE IF NOT EXISTS appointments (
   status TEXT DEFAULT 'pendiente',
   notes TEXT
 );
+
+-- MIGRACIÓN: Asegurar que la columna 'address' existe en 'appointments'
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='address') THEN
+        ALTER TABLE appointments ADD COLUMN address TEXT;
+    END IF;
+END $$;
 
 -- 4. Presupuestos (Quotes)
 CREATE TABLE IF NOT EXISTS quotes (
@@ -80,11 +102,47 @@ CREATE TABLE IF NOT EXISTS settings (
   link_color TEXT DEFAULT '#2563eb'
 );
 
+-- Insertar configuración inicial si no existe
 INSERT INTO settings (id, app_name, logo_url, nav_color, button_color, link_color) 
 VALUES ('00000000-0000-0000-0000-000000000000', 'Tafer Servicios', 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png', '#000000', '#000000', '#2563eb')
 ON CONFLICT (id) DO NOTHING;
 
--- HABILITAR ACCESO PÚBLICO (Políticas RLS)
-ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
-CREATE POLICY "Public Update Settings" ON settings FOR UPDATE USING (true);
+-- 7. HABILITAR ACCESO PÚBLICO (Políticas RLS)
+-- Nota: Esto habilita lectura/escritura pública para simplificar el demo.
+
+DO $$ 
+BEGIN 
+    -- Services
+    ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public Read Services" ON services;
+    CREATE POLICY "Public Read Services" ON services FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Public Write Services" ON services;
+    CREATE POLICY "Public Write Services" ON services FOR ALL USING (true);
+
+    -- Clients
+    ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public All Clients" ON clients;
+    CREATE POLICY "Public All Clients" ON clients FOR ALL USING (true);
+
+    -- Appointments
+    ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public All Appointments" ON appointments;
+    CREATE POLICY "Public All Appointments" ON appointments FOR ALL USING (true);
+
+    -- Quotes
+    ALTER TABLE quotes ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public All Quotes" ON quotes;
+    CREATE POLICY "Public All Quotes" ON quotes FOR ALL USING (true);
+
+    -- Receptions
+    ALTER TABLE receptions ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public All Receptions" ON receptions;
+    CREATE POLICY "Public All Receptions" ON receptions FOR ALL USING (true);
+
+    -- Settings
+    ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+    DROP POLICY IF EXISTS "Public Read Settings" ON settings;
+    CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Public Update Settings" ON settings;
+    CREATE POLICY "Public Update Settings" ON settings FOR UPDATE USING (true);
+END $$;

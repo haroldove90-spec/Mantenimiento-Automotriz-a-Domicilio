@@ -6,6 +6,7 @@ import { formatWhatsAppLink } from '../lib/utils';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { mockDb } from '../lib/mockData';
+import { loadLogoToDoc } from '../lib/pdfUtils';
 
 export default function Quotes() {
   const [view, setView] = useState<'list' | 'form' | 'details'>('list');
@@ -163,11 +164,11 @@ export default function Quotes() {
     window.open(waLink, '_blank');
   };
 
-  const exportPDF = (quote: any) => {
+  const exportPDF = async (quote: any) => {
     const doc = new jsPDF() as any;
     
     if (config?.logo_url) {
-      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+      await loadLogoToDoc(doc, config.logo_url);
     }
 
     doc.setFontSize(20);
@@ -199,11 +200,11 @@ export default function Quotes() {
     doc.save(`Presupuesto_${quote.client_name || quote.clientName}.pdf`);
   };
 
-  const exportAllToPDF = () => {
+  const exportAllToPDF = async () => {
     const doc = new jsPDF() as any;
     
     if (config?.logo_url) {
-      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+      await loadLogoToDoc(doc, config.logo_url);
     }
 
     doc.setFontSize(20);
