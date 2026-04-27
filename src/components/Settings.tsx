@@ -142,18 +142,7 @@ END $$;`;
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre de la Aplicación</label>
-                  <input 
-                    type="text"
-                    value={config.app_name}
-                    onChange={e => setConfig({...config, app_name: e.target.value})}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2.5 text-sm mt-1 outline-none focus:ring-1 focus:ring-dark"
-                    placeholder="Ej. Tafer Servicios"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between">
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Mostrar Nombre</label>
                     <p className="text-[9px] text-gray-400 font-medium">Muestra el nombre junto al logotipo.</p>
