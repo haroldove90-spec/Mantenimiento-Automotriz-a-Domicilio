@@ -139,7 +139,7 @@ function ServiceRow({ time, client, vehicle, service, address, status, statusCol
 }
 
 function AiSuggestion({ text, phone }: { text: string, phone: string }) {
-  const waLink = `https://wa.me/${phone}?text=${encodeURIComponent('Hola! Te hablo de AutoDoc Home...')}`;
+  const waLink = `https://wa.me/${phone}?text=${encodeURIComponent('Hola! Te hablo de Tafer Servicios...')}`;
   
   return (
     <div className="bg-white/10 p-4 rounded-xl backdrop-blur-md border border-white/10">

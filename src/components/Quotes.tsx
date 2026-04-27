@@ -35,7 +35,7 @@ export default function Quotes() {
   }, []);
 
   const addServiceItem = (service: any) => {
-    const newItem = { description: service.name, quantity: 1, price: service.basePrice };
+    const newItem = { description: service.name, quantity: 1, price: (service.base_price || service.basePrice || 0) };
     if (items.length === 1 && items[0].description === '' && items[0].price === 0) {
       setItems([newItem]);
     } else {
@@ -141,20 +141,20 @@ export default function Quotes() {
 
   const handleEdit = (quote: any) => {
     setEditingId(quote.id);
-    setClientName(quote.clientName);
+    setClientName(quote.client_name || quote.clientName);
     setPhone(quote.phone);
     setAddress(quote.address || '');
-    setVehicleMake(quote.vehicleMake);
-    setVehicleModel(quote.vehicleModel);
-    setServiceType(quote.serviceType);
+    setVehicleMake(quote.vehicle_make || quote.vehicleMake);
+    setVehicleModel(quote.vehicle_model || quote.vehicleModel);
+    setServiceType(quote.service_type || quote.serviceType);
     setItems(quote.items);
     setView('form');
   };
 
   const handleResend = (quote: any) => {
-    const message = `*Re-envío de Presupuesto*\n\nHola ${quote.clientName}, te recordamos el presupuesto para tu ${quote.vehicleMake} ${quote.vehicleModel}:\n\n` + 
+    const message = `*Re-envío de Presupuesto*\n\nHola ${quote.client_name || quote.clientName}, te recordamos el presupuesto para tu ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}:\n\n` + 
       quote.items.map((i: any) => `- ${i.description}: $${Number(i.price).toLocaleString()} x ${i.quantity}`).join('\n') + 
-      `\n\n*TOTAL: $${quote.total.toLocaleString()} MXN*\n\n¿Deseas agendar el servicio?`;
+      `\n\n*TOTAL: $${quote.total?.toLocaleString()} MXN*\n\n¿Deseas agendar el servicio?`;
     
     const waLink = formatWhatsAppLink(quote.phone, message);
     window.open(waLink, '_blank');
@@ -165,10 +165,10 @@ export default function Quotes() {
     doc.setFontSize(20);
     doc.text("Presupuesto Automotriz", 14, 20);
     doc.setFontSize(10);
-    doc.text(`Cliente: ${quote.clientName}`, 14, 30);
-    doc.text(`Vehículo: ${quote.vehicleMake} ${quote.vehicleModel}`, 14, 36);
-    doc.text(`Servicio: ${quote.serviceType}`, 14, 42);
-    doc.text(`Fecha: ${quote.createdAt?.toDate ? quote.createdAt.toDate().toLocaleDateString() : 'N/A'}`, 14, 48);
+    doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, 30);
+    doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, 36);
+    doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, 42);
+    doc.text(`Fecha: ${quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}`, 14, 48);
 
     doc.autoTable({
       startY: 55,
@@ -184,7 +184,7 @@ export default function Quotes() {
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     doc.setFontSize(14);
     doc.text(`TOTAL: $${quote.total} MXN`, 14, finalY);
-    doc.save(`Presupuesto_${quote.clientName}.pdf`);
+    doc.save(`Presupuesto_${quote.client_name || quote.clientName}.pdf`);
   };
 
   const exportAllToPDF = () => {
@@ -196,10 +196,10 @@ export default function Quotes() {
       startY: 30,
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
       body: quotes.map(q => [
-        q.createdAt?.toDate ? q.createdAt.toDate().toLocaleDateString() : 'N/A',
-        q.clientName,
-        `${q.vehicleMake} ${q.vehicleModel}`,
-        q.serviceType,
+        q.createdAt ? new Date(q.createdAt).toLocaleDateString() : 'N/A',
+        q.client_name || q.clientName,
+        `${q.vehicle_make || q.vehicleMake} ${q.vehicle_model || q.vehicleModel}`,
+        q.service_type || q.serviceType,
         `$${q.total}`
       ]),
     });
@@ -448,19 +448,19 @@ export default function Quotes() {
               {quotes.map((quote) => (
                 <tr key={quote.id} className="hover:bg-gray-50 transition-colors group">
                   <td className="py-4 px-6">
-                    <p className="text-sm font-bold text-dark">{quote.clientName}</p>
-                    <p className="text-[10px] text-gray-500 font-medium uppercase">{quote.vehicleMake} {quote.vehicleModel}</p>
+                    <p className="text-sm font-bold text-dark">{quote.client_name || quote.clientName}</p>
+                    <p className="text-[10px] text-gray-500 font-medium uppercase">{quote.vehicle_make || quote.vehicleMake} {quote.vehicle_model || quote.vehicleModel}</p>
                   </td>
                   <td className="py-4 px-6">
                     <span className="text-[10px] font-bold text-primary bg-blue-50 px-2 py-1 rounded uppercase tracking-wider">
-                      {quote.serviceType || 'General'}
+                      {quote.service_type || quote.serviceType || 'General'}
                     </span>
                   </td>
                   <td className="py-4 px-6">
-                    <p className="text-sm font-bold text-dark font-mono">${quote.total.toLocaleString()} MXN</p>
+                    <p className="text-sm font-bold text-dark font-mono">${(quote.total || 0).toLocaleString()} MXN</p>
                   </td>
                   <td className="py-4 px-6 text-xs text-gray-400 font-bold uppercase">
-                    {quote.createdAt?.toDate().toLocaleDateString() || 'N/A'}
+                    {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">

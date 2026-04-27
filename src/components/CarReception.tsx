@@ -36,6 +36,28 @@ export default function CarReception() {
     fetch();
   }, []);
 
+  const exportAllToPDF = () => {
+    const doc = new jsPDF() as any;
+    doc.setFontSize(20);
+    doc.text("Historial de Recepciones - Tafer Servicios", 14, 22);
+    
+    const data = services.map(s => [
+      s.date || 'N/A',
+      s.client_name || s.clientName || 'N/A',
+      `${s.vehicle_make || s.vehicleMake} ${s.vehicle_model || s.vehicleModel}`,
+      s.service_type || s.serviceType || 'N/A',
+      s.status || 'en proceso'
+    ]);
+    
+    doc.autoTable({
+      startY: 30,
+      head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
+      body: data,
+    });
+    
+    doc.save("Historial_Recepciones_Tafer.pdf");
+  };
+
   const handleClientSelect = (clientId: string) => {
     const client = clients.find(c => c.id === clientId);
     if (client) {
@@ -132,9 +154,9 @@ export default function CarReception() {
     doc.text("Recepción de Vehículo", 14, 20);
     
     doc.setFontSize(10);
-    doc.text(`Cliente: ${service.clientName}`, 14, 30);
-    doc.text(`Vehículo: ${service.vehicleMake} ${service.vehicleModel}`, 14, 36);
-    doc.text(`Servicio: ${service.serviceType}`, 14, 42);
+    doc.text(`Cliente: ${service.client_name || service.clientName}`, 14, 30);
+    doc.text(`Vehículo: ${service.vehicle_make || service.vehicleMake} ${service.vehicle_model || service.vehicleModel}`, 14, 36);
+    doc.text(`Servicio: ${service.service_type || service.serviceType}`, 14, 42);
     doc.text(`Fecha: ${service.date}`, 14, 48);
     doc.text(`Estatus: ${service.status}`, 14, 54);
 
@@ -159,12 +181,20 @@ export default function CarReception() {
           <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Gestión de entrada y evidencias</p>
         </div>
         {view === 'list' && (
-          <button 
-            onClick={() => setView('form')}
-            className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
-          >
-            <Plus className="w-4 h-4" /> Nueva Recepción
-          </button>
+          <div className="flex gap-2">
+            <button 
+              onClick={exportAllToPDF}
+              className="bg-white text-dark border border-gray-100 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-all shadow-sm text-sm"
+            >
+              <Download className="w-4 h-4" /> Exportar PDF
+            </button>
+            <button 
+              onClick={() => setView('form')}
+              className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
+            >
+              <Plus className="w-4 h-4" /> Nueva Recepción
+            </button>
+          </div>
         )}
       </div>
 
@@ -306,24 +336,24 @@ export default function CarReception() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {services.map((s) => (
-                      <tr key={s.id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="py-4 px-6 text-sm">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-dark font-bold border border-gray-100 group-hover:bg-dark group-hover:text-white transition-all">
-                              {s.vehicleMake[0]}
+                      {services.map((s) => (
+                        <tr key={s.id} className="hover:bg-gray-50 transition-colors group">
+                          <td className="py-4 px-6 text-sm">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-dark font-bold border border-gray-100 group-hover:bg-dark group-hover:text-white transition-all">
+                                {s.vehicle_make ? s.vehicle_make[0] : (s.vehicleMake ? s.vehicleMake[0] : '?')}
+                              </div>
+                              <div>
+                                <p className="font-bold text-dark">{s.vehicle_make || s.vehicleMake} {s.vehicle_model || s.vehicleModel}</p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase">{s.client_name || s.clientName}</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-dark">{s.vehicleMake} {s.vehicleModel}</p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase">{s.clientName}</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                           <span className="text-[10px] font-bold text-primary bg-blue-50 px-2 py-1 rounded uppercase tracking-wider">
-                            {s.serviceType}
-                          </span>
-                        </td>
+                          </td>
+                          <td className="py-4 px-6">
+                             <span className="text-[10px] font-bold text-primary bg-blue-50 px-2 py-1 rounded uppercase tracking-wider">
+                              {s.service_type || s.serviceType}
+                            </span>
+                          </td>
                         <td className="py-4 px-6">
                           <select 
                             value={s.status}

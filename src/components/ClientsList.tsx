@@ -11,23 +11,37 @@ export default function ClientsList() {
   const [clients, setClients] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [view, setView] = useState<'list' | 'details' | 'edit'>('list');
+  const [view, setView] = useState<'list' | 'details' | 'edit' | 'new'>('list');
   const [history, setHistory] = useState<{ appointments: any[], quotes: any[] }>({ appointments: [], quotes: [] });
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [newClient, setNewClient] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    vehicle_make: '',
+    vehicle_model: ''
+  });
 
   useEffect(() => {
     const fetch = async () => {
       const allClients = await mockDb.get('clients');
-      // Sort by newest first
-      const sorted = [...allClients].sort((a, b) => {
-        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
-        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
-        return dateB.getTime() - dateA.getTime();
-      });
-      setClients(sorted);
+      setClients(allClients);
     };
     fetch();
   }, []);
+
+  const handleCreateClient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await mockDb.add('clients', newClient);
+      const all = await mockDb.get('clients');
+      setClients(all);
+      setView('list');
+      setNewClient({ name: '', phone: '', address: '', vehicle_make: '', vehicle_model: '' });
+    } catch (error) {
+      alert("Error al crear cliente");
+    }
+  };
 
   const fetchClientHistory = async (client: any) => {
     if (!client.phone) return;
@@ -92,14 +106,14 @@ export default function ClientsList() {
     doc.text(`Cliente: ${selectedClient.name}`, 14, 32);
     doc.text(`Teléfono: ${selectedClient.phone}`, 14, 38);
     doc.text(`Dirección: ${selectedClient.address || 'N/A'}`, 14, 44);
-    doc.text(`Vehículo: ${selectedClient.vehicleMake} ${selectedClient.vehicleModel}`, 14, 50);
+    doc.text(`Vehículo: ${selectedClient.vehicle_make || selectedClient.vehicleMake} ${selectedClient.vehicle_model || selectedClient.vehicleModel}`, 14, 50);
     
     doc.setFontSize(14);
     doc.text("Presupuestos", 14, 65);
     
     const quoteData = history.quotes.map(q => [
       q.createdAt?.toDate ? q.createdAt.toDate().toLocaleDateString() : 'N/A',
-      q.serviceType || 'Varios',
+      q.service_type || q.serviceType || 'Varios',
       `$${q.total || 0}`,
       q.status || 'N/A'
     ]);
@@ -116,8 +130,8 @@ export default function ClientsList() {
     const apptData = history.appointments.map(a => [
       a.date || 'N/A',
       a.time || 'N/A',
-      a.serviceType || 'Mantenimiento',
-      a.problemDescription || ''
+      a.service_type || a.serviceType || 'Mantenimiento',
+      a.notes || ''
     ]);
     
     doc.autoTable({
@@ -150,7 +164,10 @@ export default function ClientsList() {
                 <h2 className="text-xl font-bold text-dark tracking-tight">Directorio de Clientes</h2>
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Gestión y búsqueda rápida</p>
               </div>
-              <button className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm">
+              <button 
+                onClick={() => setView('new')}
+                className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
+              >
                 <Plus className="w-4 h-4" /> Agregar Cliente
               </button>
             </div>
@@ -323,16 +340,16 @@ export default function ClientsList() {
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Marca Vehículo</label>
                   <input 
-                    value={selectedClient.vehicleMake || ''}
-                    onChange={(e) => setSelectedClient({ ...selectedClient, vehicleMake: e.target.value })}
+                    value={selectedClient.vehicle_make || selectedClient.vehicleMake || ''}
+                    onChange={(e) => setSelectedClient({ ...selectedClient, vehicle_make: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
                   />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Modelo Vehículo</label>
                   <input 
-                    value={selectedClient.vehicleModel || ''}
-                    onChange={(e) => setSelectedClient({ ...selectedClient, vehicleModel: e.target.value })}
+                    value={selectedClient.vehicle_model || selectedClient.vehicleModel || ''}
+                    onChange={(e) => setSelectedClient({ ...selectedClient, vehicle_model: e.target.value })}
                     className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
                   />
                 </div>
@@ -352,6 +369,81 @@ export default function ClientsList() {
                   className="w-full bg-dark text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-md"
                 >
                   <Save className="w-5 h-5 text-primary" /> Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+
+        {view === 'new' && (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="bg-white rounded-2xl border border-gray-100 shadow-xl overflow-hidden max-w-2xl mx-auto"
+          >
+            <div className="px-6 py-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+              <h3 className="font-bold text-dark">Nuevo Cliente</h3>
+              <button onClick={() => setView('list')} className="text-gray-400 hover:text-dark transition-colors"><Plus className="w-5 h-5 rotate-45" /></button>
+            </div>
+            
+            <form onSubmit={handleCreateClient} className="p-8 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre Completo</label>
+                  <input 
+                    required
+                    value={newClient.name}
+                    onChange={(e) => setNewClient({ ...newClient, name: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
+                    placeholder="Juan Pérez"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Teléfono (WhatsApp)</label>
+                  <input 
+                    required
+                    value={newClient.phone}
+                    onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
+                    placeholder="5512345678"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Marca Vehículo</label>
+                  <input 
+                    value={newClient.vehicle_make}
+                    onChange={(e) => setNewClient({ ...newClient, vehicle_make: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
+                    placeholder="Toyota"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Modelo Vehículo</label>
+                  <input 
+                    value={newClient.vehicle_model}
+                    onChange={(e) => setNewClient({ ...newClient, vehicle_model: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
+                    placeholder="Corolla"
+                  />
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Dirección</label>
+                  <input 
+                    value={newClient.address}
+                    onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm font-medium focus:ring-1 focus:ring-dark outline-none"
+                    placeholder="Calle 123, Col. Centro"
+                  />
+                </div>
+              </div>
+              
+              <div className="pt-6 border-t border-gray-50">
+                <button 
+                  type="submit"
+                  className="w-full bg-dark text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-md"
+                >
+                  <Save className="w-5 h-5 text-primary" /> Crear Cliente
                 </button>
               </div>
             </form>
@@ -398,7 +490,7 @@ function ClientCard({ client, onClick, onDelete }: { client: any, onClick: () =>
           <MapPin className="w-3.5 h-3.5 text-gray-400" /> {client.address || 'Sin dirección'}
         </div>
         <div className="flex items-center gap-2 text-xs text-gray-500 font-semibold uppercase tracking-wider">
-          <Car className="w-3.5 h-3.5 text-gray-400" /> {client.vehicleMake} {client.vehicleModel || ''}
+          <Car className="w-3.5 h-3.5 text-gray-400" /> {client.vehicle_make || client.vehicleMake} {client.vehicle_model || client.vehicleModel || ''}
         </div>
       </div>
       

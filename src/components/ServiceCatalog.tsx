@@ -17,11 +17,7 @@ export default function ServiceCatalog() {
     description: '',
     basePrice: '',
     estimatedDuration: '',
-    category: 'Mantenimiento',
-    clientName: '',
-    phone: '',
-    address: '',
-    vehicleInfo: ''
+    category: 'Mantenimiento'
   });
 
   useEffect(() => {
@@ -36,35 +32,13 @@ export default function ServiceCatalog() {
     e.preventDefault();
     setLoading(true);
     try {
-      // 1. Sync Client Data (Automatic registration)
-      if (formData.clientName && formData.phone) {
-        const clients = await mockDb.query('clients', 'phone', formData.phone);
-        
-        const clientData = {
-          name: formData.clientName,
-          phone: formData.phone,
-          address: formData.address,
-          vehicle_info: formData.vehicleInfo,
-        };
-
-        if (clients.length === 0) {
-          await mockDb.add('clients', clientData);
-        } else {
-          await mockDb.update('clients', clients[0].id, clientData);
-        }
-      }
-
       // 2. Save Service Record
       const data = {
         name: formData.name,
         description: formData.description,
         base_price: parseFloat(formData.basePrice as string),
         estimated_duration: formData.estimatedDuration,
-        category: formData.category,
-        client_name: formData.clientName,
-        phone: formData.phone,
-        address: formData.address,
-        vehicle_info: formData.vehicleInfo
+        category: formData.category
       };
 
       if (editingService) {
@@ -84,11 +58,7 @@ export default function ServiceCatalog() {
         description: '', 
         basePrice: '', 
         estimatedDuration: '', 
-        category: 'Mantenimiento',
-        clientName: '',
-        phone: '',
-        address: '',
-        vehicleInfo: ''
+        category: 'Mantenimiento'
       });
     } catch (error) {
       console.error("Error saving service:", error);
@@ -103,13 +73,9 @@ export default function ServiceCatalog() {
     setFormData({
       name: service.name,
       description: service.description || '',
-      basePrice: service.basePrice.toString(),
-      estimatedDuration: service.estimatedDuration || '',
-      category: service.category || 'Mantenimiento',
-      clientName: service.clientName || '',
-      phone: service.phone || '',
-      address: service.address || '',
-      vehicleInfo: service.vehicleInfo || ''
+      basePrice: (service.base_price || service.basePrice || 0).toString(),
+      estimatedDuration: service.estimated_duration || service.estimatedDuration || '',
+      category: service.category || 'Mantenimiento'
     });
     setShowForm(true);
   };
@@ -136,10 +102,10 @@ export default function ServiceCatalog() {
           <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Gestiona los servicios que ofrece tu taller</p>
         </div>
         <button 
-          onClick={() => { setEditingService(null); setFormData({ name: '', description: '', basePrice: '', estimatedDuration: '', category: 'Mantenimiento', clientName: '', phone: '', address: '', vehicleInfo: '' }); setShowForm(true); }}
+          onClick={() => { setEditingService(null); setFormData({ name: '', description: '', basePrice: '', estimatedDuration: '', category: 'Mantenimiento' }); setShowForm(true); }}
           className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
         >
-          <Plus className="w-4 h-4" /> Nuevo Registro de Servicio
+          <Plus className="w-4 h-4" /> Nuevo Servicio
         </button>
       </div>
 
@@ -172,19 +138,14 @@ export default function ServiceCatalog() {
               </div>
             </div>
             <h3 className="font-bold text-dark mb-1">{service.name}</h3>
-            {service.clientName && (
-              <p className="text-[10px] text-primary font-bold uppercase tracking-widest mb-2 flex items-center gap-1">
-                <User className="w-2.5 h-2.5" /> {service.clientName}
-              </p>
-            )}
             <p className="text-xs text-gray-500 line-clamp-2 h-8 mb-4">{service.description}</p>
             
             <div className="flex items-center justify-between pt-4 border-t border-gray-50">
               <div className="flex items-center gap-1.5 text-xs text-gray-400 font-bold uppercase">
-                <Clock className="w-3.5 h-3.5" /> {service.estimatedDuration}
+                <Clock className="w-3.5 h-3.5" /> {service.estimated_duration || service.estimatedDuration}
               </div>
               <div className="text-lg font-bold text-dark font-mono">
-                ${service.basePrice.toLocaleString()}
+                ${(service.base_price || service.basePrice || 0).toLocaleString()}
               </div>
             </div>
           </motion.div>
@@ -201,55 +162,10 @@ export default function ServiceCatalog() {
               className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
             >
               <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50">
-                <h3 className="font-bold text-dark">{editingService ? 'Editar Servicio' : 'Nuevo Registro de Trabajo'}</h3>
+                <h3 className="font-bold text-dark">{editingService ? 'Editar Servicio' : 'Nuevo Servicio'}</h3>
                 <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-dark">×</button>
               </div>
               <form onSubmit={handleSave} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
-                {/* Client Section */}
-                <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-50 space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                    <User className="w-3 h-3" /> Información del Cliente
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Nombre</label>
-                      <input 
-                        value={formData.clientName}
-                        onChange={e => setFormData({...formData, clientName: e.target.value})}
-                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
-                        placeholder="Juan Pérez"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">WhatsApp</label>
-                      <input 
-                        value={formData.phone}
-                        onChange={e => setFormData({...formData, phone: e.target.value})}
-                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
-                        placeholder="5512345678"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Vehículo</label>
-                      <input 
-                        value={formData.vehicleInfo}
-                        onChange={e => setFormData({...formData, vehicleInfo: e.target.value})}
-                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
-                        placeholder="Marca y Modelo"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[9px] font-black uppercase tracking-widest text-gray-400">Dirección</label>
-                      <input 
-                        value={formData.address}
-                        onChange={e => setFormData({...formData, address: e.target.value})}
-                        className="w-full bg-white border border-gray-100 rounded-lg p-2.5 text-xs focus:ring-1 focus:ring-primary outline-none"
-                        placeholder="Calle, Colonia, etc."
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 <div className="space-y-4 pt-2">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-400">Detalles del Trabajo</h4>
                   <div className="space-y-1.5">

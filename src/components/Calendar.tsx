@@ -12,10 +12,8 @@ import {
   endOfWeek
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car, Trash2, Download, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car, Trash2, Download, Calendar as CalendarIcon, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-// import { db, auth } from '../lib/firebase';
-// import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { formatWhatsAppLink, getAppointmentReminder } from '../lib/utils';
 import { mockDb } from '../lib/mockData';
 import { jsPDF } from 'jspdf';
@@ -24,6 +22,7 @@ import 'jspdf-autotable';
 export default function AppointmentCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [services, setServices] = useState<any[]>([]);
   const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,14 +34,18 @@ export default function AppointmentCalendar() {
     address: '',
     serviceType: '',
     date: new Date().toISOString().split('T')[0],
-    time: '09:00',
+    hour: '09',
+    minute: '00',
+    period: 'AM',
     notes: ''
   });
 
   useEffect(() => {
     const fetch = async () => {
       const data = await mockDb.get('appointments');
+      const allServices = await mockDb.get('services');
       setAppointments(data);
+      setServices(allServices);
     };
     fetch();
   }, []);
@@ -70,7 +73,7 @@ export default function AppointmentCalendar() {
         await mockDb.update('clients', clients[0].id, clientData);
       }
 
-      const appointmentDate = new Date(`${formData.date}T${formData.time}`);
+      const timeString = `${formData.hour}:${formData.minute} ${formData.period}`;
 
       const newAppointment = {
         client_name: formData.clientName,
@@ -79,8 +82,8 @@ export default function AppointmentCalendar() {
         service_type: formData.serviceType,
         address: formData.address,
         date: formData.date,
-        time: formData.time,
-        status: 'pending',
+        time: timeString,
+        status: 'pendiente',
         notes: formData.notes
       };
 
@@ -93,8 +96,8 @@ export default function AppointmentCalendar() {
       // WhatsApp Confirmation
       const whatsappMsg = getAppointmentReminder(
         formData.clientName,
-        format(appointmentDate, 'dd/MM/yyyy'),
-        formData.time,
+        formData.date,
+        timeString,
         formData.serviceType
       );
       
@@ -110,7 +113,9 @@ export default function AppointmentCalendar() {
         address: '',
         serviceType: '',
         date: new Date().toISOString().split('T')[0],
-        time: '09:00',
+        hour: '09',
+        minute: '00',
+        period: 'AM',
         notes: ''
       });
     } catch (error) {
@@ -131,34 +136,38 @@ export default function AppointmentCalendar() {
     end: endDate,
   });
 
-  const handleResendWhatsApp = (app: any) => {
-    const whatsappMsg = getAppointmentReminder(
-      app.clientName,
-      format(new Date(app.date), 'dd/MM/yyyy'),
-      app.time,
-      app.serviceType
-    );
-    const waLink = formatWhatsAppLink(app.phone, whatsappMsg);
-    window.open(waLink, '_blank');
-  };
-
   const exportAllToPDF = () => {
     const doc = new jsPDF() as any;
     doc.setFontSize(20);
-    doc.text("Historial de Citas", 14, 20);
+    doc.text("Historial de Citas - Tafer Servicios", 14, 22);
+    
+    const data = appointments.map(a => [
+      a.date || 'N/A',
+      a.time || 'N/A',
+      a.client_name || a.clientName || 'N/A',
+      a.vehicle_info || a.vehicleInfo || 'N/A',
+      a.service_type || a.serviceType || 'N/A',
+      a.status || 'pendiente'
+    ]);
     
     doc.autoTable({
       startY: 30,
-      head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio']],
-      body: appointments.map(a => [
-        format(new Date(a.date), 'dd/MM/yyyy'),
-        a.time,
-        a.clientName,
-        a.vehicleInfo,
-        a.serviceType
-      ]),
+      head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
+      body: data,
     });
-    doc.save("Historial_Citas.pdf");
+    
+    doc.save("Historial_Citas_Tafer.pdf");
+  };
+
+  const handleResendWhatsApp = (app: any) => {
+    const whatsappMsg = getAppointmentReminder(
+      app.client_name || app.clientName,
+      app.date,
+      app.time,
+      app.service_type || app.serviceType
+    );
+    const waLink = formatWhatsAppLink(app.phone, whatsappMsg);
+    window.open(waLink, '_blank');
   };
 
   const exportSingleToPDF = (app: any) => {
@@ -166,13 +175,13 @@ export default function AppointmentCalendar() {
     doc.setFontSize(20);
     doc.text("Comprobante de Cita", 14, 20);
     doc.setFontSize(10);
-    doc.text(`Cliente: ${app.clientName}`, 14, 30);
+    doc.text(`Cliente: ${app.client_name || app.clientName}`, 14, 30);
     doc.text(`WhatsApp: ${app.phone}`, 14, 36);
-    doc.text(`Vehículo: ${app.vehicleInfo}`, 14, 42);
-    doc.text(`Servicio: ${app.serviceType}`, 14, 48);
-    doc.text(`Fecha: ${format(new Date(app.date), 'dd/MM/yyyy')}`, 14, 54);
+    doc.text(`Vehículo: ${app.vehicle_info || app.vehicleInfo}`, 14, 42);
+    doc.text(`Servicio: ${app.service_type || app.serviceType}`, 14, 48);
+    doc.text(`Fecha: ${app.date}`, 14, 54);
     doc.text(`Hora: ${app.time}`, 14, 60);
-    doc.save(`Cita_${app.clientName}.pdf`);
+    doc.save(`Cita_${app.client_name || app.clientName}.pdf`);
   };
 
   const appointmentsForSelectedDay = appointments.filter(app => {
@@ -231,12 +240,12 @@ export default function AppointmentCalendar() {
                 <div className="mt-1 space-y-1 overflow-hidden">
                   {dayAppointments.slice(0, 2).map((app, idx) => (
                     <div key={idx} className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-primary truncate leading-none">
-                      {app.serviceType}
+                      {app.serviceType || app.service_type}
                     </div>
                   ))}
-                  {dayAppointments.length > 3 && (
+                  {dayAppointments.length > 2 && (
                     <div className="text-[9px] font-bold text-gray-400 px-1.5">
-                      + {dayAppointments.length - 3} más
+                      + {dayAppointments.length - 2} más
                     </div>
                   )}
                 </div>
@@ -360,37 +369,62 @@ export default function AppointmentCalendar() {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Hora</label>
-                    <div className="relative">
-                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-                      <input 
-                        type="time"
-                        required
-                        value={formData.time}
-                        onChange={e => setFormData({...formData, time: e.target.value})}
-                        className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-1 focus:ring-primary outline-none"
-                      />
+                    <div className="grid grid-cols-3 gap-1">
+                      <select 
+                        value={formData.hour}
+                        onChange={e => setFormData({...formData, hour: e.target.value})}
+                        className="bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs outline-none"
+                      >
+                        {Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0')).map(h => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                      <select 
+                        value={formData.minute}
+                        onChange={e => setFormData({...formData, minute: e.target.value})}
+                        className="bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs outline-none"
+                      >
+                        {['00', '15', '30', '45'].map(m => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                      <select 
+                        value={formData.period}
+                        onChange={e => setFormData({...formData, period: e.target.value})}
+                        className="bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs outline-none"
+                      >
+                        <option value="AM">AM</option>
+                        <option value="PM">PM</option>
+                      </select>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Servicio</label>
-                  <input 
+                  <select 
                     required
                     value={formData.serviceType}
-                    onChange={e => setFormData({...formData, serviceType: e.target.value})}
+                    onChange={e => {
+                      setFormData({...formData, serviceType: e.target.value});
+                    }}
                     className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
-                    placeholder="Cambio de aceite"
-                  />
+                  >
+                    <option value="">Seleccionar servicio...</option>
+                    {services.map(s => (
+                      <option key={s.id} value={s.name}>{s.name} - ${s.base_price || s.basePrice || 0}</option>
+                    ))}
+                    <option value="Otro">Otro (especificar en notas)</option>
+                  </select>
                 </div>
 
-        <button 
-          disabled={loading}
-          type="submit"
-          className="w-full bg-dark text-white py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-sm"
-        >
-          {loading ? 'Guardando...' : 'Agendar y Notificar WhatsApp'}
-        </button>
+                <button 
+                  disabled={loading}
+                  type="submit"
+                  className="w-full bg-dark text-white py-2.5 rounded-lg font-bold text-xs uppercase tracking-widest hover:bg-gray-800 transition-all shadow-sm"
+                >
+                  {loading ? 'Guardando...' : 'Agendar y Notificar WhatsApp'}
+                </button>
               </form>
             </motion.div>
           )}
@@ -403,7 +437,7 @@ export default function AppointmentCalendar() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.1 }}
-                key={i} 
+                key={app.id || i} 
                 className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group"
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
@@ -412,6 +446,13 @@ export default function AppointmentCalendar() {
                       {app.time || '00:00'}
                     </span>
                     <div className="flex gap-2">
+                       <button 
+                        onClick={() => handleResendWhatsApp(app)}
+                        className="p-1 text-gray-300 hover:text-green-500 transition-colors"
+                        title="Reenviar WhatsApp"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                      </button>
                       <button 
                         onClick={() => exportSingleToPDF(app)}
                         className="p-1 text-gray-300 hover:text-primary transition-colors"
@@ -433,14 +474,14 @@ export default function AppointmentCalendar() {
                       </button>
                     </div>
                   </div>
-                <h4 className="font-bold text-dark leading-tight mb-1">{app.serviceType}</h4>
-                <p className="text-xs text-gray-500 mb-4 font-medium">{app.vehicleInfo}</p>
+                <h4 className="font-bold text-dark leading-tight mb-1">{app.service_type || app.serviceType}</h4>
+                <p className="text-xs text-gray-500 mb-4 font-medium">{app.vehicle_info || app.vehicleInfo}</p>
                 <div className="flex items-center gap-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" /> 1h est.
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> Oficina
+                  <div className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1 py-0.5 rounded">
+                    <span className="font-black">ESTADO:</span> {app.status || 'pendiente'}
                   </div>
                 </div>
               </motion.div>

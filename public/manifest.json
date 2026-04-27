@@ -1,19 +1,19 @@
 {
   "name": "Tafer Servicios",
   "short_name": "Tafer",
-  "description": "Administrador Inteligente de Taller Mecánico",
+  "description": "Administración de taller mecánico",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#000000",
-  "theme_color": "#FFF212",
+  "theme_color": "#000000",
   "icons": [
     {
-      "src": "https://ui-avatars.com/api/?name=Tafer&background=000&color=FFF212&size=192",
+      "src": "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "https://ui-avatars.com/api/?name=Tafer&background=000&color=FFF212&size=512",
+      "src": "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png",
       "sizes": "512x512",
       "type": "image/png"
     }
