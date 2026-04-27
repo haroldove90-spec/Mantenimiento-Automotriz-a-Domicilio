@@ -12,12 +12,14 @@ import {
   endOfWeek
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car, Trash2, Download, Calendar as CalendarIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 // import { db, auth } from '../lib/firebase';
 // import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { formatWhatsAppLink, getAppointmentReminder } from '../lib/utils';
 import { mockDb } from '../lib/mockData';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 export default function AppointmentCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -32,12 +34,17 @@ export default function AppointmentCalendar() {
     model: '',
     address: '',
     serviceType: '',
+    date: new Date().toISOString().split('T')[0],
     time: '09:00',
     notes: ''
   });
 
   useEffect(() => {
-    setAppointments(mockDb.get('appointments'));
+    const fetch = async () => {
+      const data = await mockDb.get('appointments');
+      setAppointments(data);
+    };
+    fetch();
   }, []);
 
   const handleSaveAppointment = async (e: React.FormEvent) => {
@@ -47,44 +54,41 @@ export default function AppointmentCalendar() {
 
     try {
       // 1. Sync Client Data
-      const clients = mockDb.query('clients', 'phone', formData.phone);
+      const clients = await mockDb.query('clients', 'phone', formData.phone);
       
       const clientData = {
         name: formData.clientName,
         phone: formData.phone,
-        vehicleMake: formData.make,
-        vehicleModel: formData.model,
+        vehicle_make: formData.make,
+        vehicle_model: formData.model,
         address: formData.address,
-        updatedAt: new Date()
       };
 
       if (clients.length === 0) {
-        mockDb.add('clients', clientData);
+        await mockDb.add('clients', clientData);
       } else {
-        mockDb.update('clients', clients[0].id, clientData);
+        await mockDb.update('clients', clients[0].id, clientData);
       }
 
-      const appointmentDate = new Date(selectedDay);
-      const [hours, minutes] = formData.time.split(':');
-      appointmentDate.setHours(parseInt(hours), parseInt(minutes));
+      const appointmentDate = new Date(`${formData.date}T${formData.time}`);
 
       const newAppointment = {
-        clientName: formData.clientName,
+        client_name: formData.clientName,
         phone: formData.phone,
-        vehicleInfo: `${formData.make} ${formData.model}`,
-        serviceType: formData.serviceType,
+        vehicle_info: `${formData.make} ${formData.model}`,
+        service_type: formData.serviceType,
         address: formData.address,
-        date: appointmentDate.toISOString(),
+        date: formData.date,
         time: formData.time,
         status: 'pending',
-        notes: formData.notes,
-        createdAt: new Date(),
+        notes: formData.notes
       };
 
-      mockDb.add('appointments', newAppointment);
+      await mockDb.add('appointments', newAppointment);
 
       // Refresh list
-      setAppointments(mockDb.get('appointments'));
+      const data = await mockDb.get('appointments');
+      setAppointments(data);
 
       // WhatsApp Confirmation
       const whatsappMsg = getAppointmentReminder(
@@ -105,6 +109,7 @@ export default function AppointmentCalendar() {
         model: '',
         address: '',
         serviceType: '',
+        date: new Date().toISOString().split('T')[0],
         time: '09:00',
         notes: ''
       });
@@ -126,6 +131,50 @@ export default function AppointmentCalendar() {
     end: endDate,
   });
 
+  const handleResendWhatsApp = (app: any) => {
+    const whatsappMsg = getAppointmentReminder(
+      app.clientName,
+      format(new Date(app.date), 'dd/MM/yyyy'),
+      app.time,
+      app.serviceType
+    );
+    const waLink = formatWhatsAppLink(app.phone, whatsappMsg);
+    window.open(waLink, '_blank');
+  };
+
+  const exportAllToPDF = () => {
+    const doc = new jsPDF() as any;
+    doc.setFontSize(20);
+    doc.text("Historial de Citas", 14, 20);
+    
+    doc.autoTable({
+      startY: 30,
+      head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio']],
+      body: appointments.map(a => [
+        format(new Date(a.date), 'dd/MM/yyyy'),
+        a.time,
+        a.clientName,
+        a.vehicleInfo,
+        a.serviceType
+      ]),
+    });
+    doc.save("Historial_Citas.pdf");
+  };
+
+  const exportSingleToPDF = (app: any) => {
+    const doc = new jsPDF() as any;
+    doc.setFontSize(20);
+    doc.text("Comprobante de Cita", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Cliente: ${app.clientName}`, 14, 30);
+    doc.text(`WhatsApp: ${app.phone}`, 14, 36);
+    doc.text(`Vehículo: ${app.vehicleInfo}`, 14, 42);
+    doc.text(`Servicio: ${app.serviceType}`, 14, 48);
+    doc.text(`Fecha: ${format(new Date(app.date), 'dd/MM/yyyy')}`, 14, 54);
+    doc.text(`Hora: ${app.time}`, 14, 60);
+    doc.save(`Cita_${app.clientName}.pdf`);
+  };
+
   const appointmentsForSelectedDay = appointments.filter(app => {
     if (!app.date) return false;
     return isSameDay(new Date(app.date), selectedDay || new Date());
@@ -142,6 +191,12 @@ export default function AppointmentCalendar() {
             <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Gestión de Citas Programadas</p>
           </div>
           <div className="flex gap-2">
+            <button 
+              onClick={exportAllToPDF}
+              className="p-2 hover:bg-gray-50 rounded-lg transition-all border border-gray-100 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-500"
+            >
+              <Download className="w-4 h-4 text-primary" /> Exportar Historial
+            </button>
             <button onClick={() => setCurrentDate(subMonths(currentDate, 1))} className="p-2 hover:bg-gray-50 rounded-lg transition-all border border-gray-100">
               <ChevronLeft className="w-4 h-4 text-gray-600" />
             </button>
@@ -291,14 +346,17 @@ export default function AppointmentCalendar() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Servicio</label>
-                    <input 
-                      required
-                      value={formData.serviceType}
-                      onChange={e => setFormData({...formData, serviceType: e.target.value})}
-                      className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
-                      placeholder="Cambio de aceite"
-                    />
+                    <label className="text-[10px] font-bold text-gray-400 uppercase">Fecha</label>
+                    <div className="relative">
+                      <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
+                      <input 
+                        type="date"
+                        required
+                        value={formData.date}
+                        onChange={e => setFormData({...formData, date: e.target.value})}
+                        className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2 pl-8 pr-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-gray-400 uppercase">Hora</label>
@@ -313,6 +371,17 @@ export default function AppointmentCalendar() {
                       />
                     </div>
                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Servicio</label>
+                  <input 
+                    required
+                    value={formData.serviceType}
+                    onChange={e => setFormData({...formData, serviceType: e.target.value})}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2 px-3 text-xs focus:ring-1 focus:ring-primary outline-none"
+                    placeholder="Cambio de aceite"
+                  />
                 </div>
 
         <button 
@@ -338,22 +407,32 @@ export default function AppointmentCalendar() {
                 className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group"
               >
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-blue-50 px-2 py-0.5 rounded">
-                    {app.time || '00:00'}
-                  </span>
-                  <button 
-                    onClick={() => {
-                      if(confirm("¿Borrar cita?")) {
-                        mockDb.delete('appointments', app.id);
-                        setAppointments(mockDb.get('appointments'));
-                      }
-                    }}
-                    className="p-1 text-gray-300 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary bg-blue-50 px-2 py-0.5 rounded">
+                      {app.time || '00:00'}
+                    </span>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => exportSingleToPDF(app)}
+                        className="p-1 text-gray-300 hover:text-primary transition-colors"
+                        title="Exportar PDF"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if(confirm("¿Borrar cita?")) {
+                            await mockDb.delete('appointments', app.id);
+                            const data = await mockDb.get('appointments');
+                            setAppointments(data);
+                          }
+                        }}
+                        className="p-1 text-gray-300 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 <h4 className="font-bold text-dark leading-tight mb-1">{app.serviceType}</h4>
                 <p className="text-xs text-gray-500 mb-4 font-medium">{app.vehicleInfo}</p>
                 <div className="flex items-center gap-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">

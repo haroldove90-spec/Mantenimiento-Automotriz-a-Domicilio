@@ -16,15 +16,25 @@ export default function ClientsList() {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    setClients(mockDb.get('clients'));
+    const fetch = async () => {
+      const allClients = await mockDb.get('clients');
+      // Sort by newest first
+      const sorted = [...allClients].sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      setClients(sorted);
+    };
+    fetch();
   }, []);
 
   const fetchClientHistory = async (client: any) => {
     if (!client.phone) return;
     setLoadingHistory(true);
     try {
-      const appts = mockDb.query('appointments', 'phone', client.phone);
-      const quotes = mockDb.query('quotes', 'phone', client.phone);
+      const appts = await mockDb.query('appointments', 'phone', client.phone);
+      const quotes = await mockDb.query('quotes', 'phone', client.phone);
       
       setHistory({
         appointments: appts,
@@ -48,8 +58,9 @@ export default function ClientsList() {
     if (!selectedClient) return;
     try {
       const { id, ...data } = selectedClient;
-      mockDb.update('clients', id, data);
-      setClients(mockDb.get('clients'));
+      await mockDb.update('clients', id, data);
+      const all = await mockDb.get('clients');
+      setClients(all);
       setView('details');
     } catch (error) {
       alert("Error al actualizar cliente");
@@ -60,8 +71,9 @@ export default function ClientsList() {
     e.stopPropagation();
     if (confirm("¿Estás seguro de eliminar este cliente? Se borrará su historial de este catálogo (aunque las citas y presupuestos permanezcan en sus módulos).")) {
       try {
-        mockDb.delete('clients', id);
-        setClients(mockDb.get('clients'));
+        await mockDb.delete('clients', id);
+        const all = await mockDb.get('clients');
+        setClients(all);
         if (selectedClient?.id === id) setView('list');
       } catch (error) {
         alert("Error al eliminar cliente");
@@ -375,7 +387,10 @@ function ClientCard({ client, onClick, onDelete }: { client: any, onClick: () =>
       </div>
 
       <h3 className="font-bold text-dark mb-1 text-base">{client.name || 'Cliente Nuevo'}</h3>
-      <div className="space-y-2.5 mt-4 pt-4 border-t border-gray-50">
+      <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-2">
+        ALTA: {client.createdAt?.toDate ? client.createdAt.toDate().toLocaleDateString() : 'N/A'}
+      </p>
+      <div className="space-y-2.5 mt-2 pt-4 border-t border-gray-50 text-left">
         <div className="flex items-center gap-2 text-xs text-gray-500 font-semibold uppercase tracking-wider truncate">
           <Phone className="w-3.5 h-3.5 text-primary" /> {client.phone || 'S/N'}
         </div>

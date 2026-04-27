@@ -1,6 +1,6 @@
 {
-  "name": "AutoDoc Home",
-  "description": "Dashboard inteligente para taller mecánico a domicilio con gestión de citas, presupuestos y seguimiento asistido por IA.",
+  "name": "Tafer Servicios",
+  "description": "Administrador Inteligente de Taller Mecánico con PWA y Supabase",
   "requestFramePermissions": ["camera"],
   "majorCapabilities": []
 }

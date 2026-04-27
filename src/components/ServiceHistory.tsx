@@ -25,7 +25,12 @@ export default function ServiceHistory() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    setHistory(mockDb.get('service_records'));
+    const fetch = async () => {
+      const data = await mockDb.get('receptions');
+      const finished = data.filter((r: any) => r.status === 'terminado');
+      setHistory(finished || []);
+    };
+    fetch();
   }, []);
 
   const handleGetReminders = async () => {

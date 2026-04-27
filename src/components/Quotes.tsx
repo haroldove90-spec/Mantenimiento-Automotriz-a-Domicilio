@@ -3,8 +3,8 @@ import { Plus, Trash2, Send, Download, FileText, CheckCircle, MessageCircle, Sea
 import { motion, AnimatePresence } from 'motion/react';
 import { geminiService } from '../services/geminiService';
 import { formatWhatsAppLink } from '../lib/utils';
-// import { db } from '../lib/firebase';
-// import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy, getDocs, where, deleteDoc } from 'firebase/firestore';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 import { mockDb } from '../lib/mockData';
 
 export default function Quotes() {
@@ -25,8 +25,13 @@ export default function Quotes() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    setQuotes(mockDb.get('quotes'));
-    setAvailableServices(mockDb.get('services'));
+    const fetch = async () => {
+      const allQuotes = await mockDb.get('quotes');
+      const allServices = await mockDb.get('services');
+      setQuotes(allQuotes);
+      setAvailableServices(allServices);
+    };
+    fetch();
   }, []);
 
   const addServiceItem = (service: any) => {
@@ -78,45 +83,43 @@ export default function Quotes() {
     setLoading(true);
     try {
       // Sync Client Data
-      const clients = mockDb.query('clients', 'phone', phone);
+      const clients = await mockDb.query('clients', 'phone', phone);
       
       const clientData = {
         name: clientName,
         phone: phone,
-        vehicleMake: vehicleMake,
-        vehicleModel: vehicleModel,
+        vehicle_make: vehicleMake,
+        vehicle_model: vehicleModel,
         address: address,
-        updatedAt: new Date()
       };
 
       if (clients.length === 0) {
-        mockDb.add('clients', clientData);
+        await mockDb.add('clients', clientData);
       } else {
-        mockDb.update('clients', clients[0].id, clientData);
+        await mockDb.update('clients', clients[0].id, clientData);
       }
 
       const quoteData = {
-        clientName,
+        client_name: clientName,
         phone,
         address,
-        vehicleMake,
-        vehicleModel,
-        serviceType,
+        vehicle_make: vehicleMake,
+        vehicle_model: vehicleModel,
+        service_type: serviceType,
         items,
         total,
-        currency: 'MXN',
         status: 'sent',
-        updatedAt: new Date()
       };
 
       if (editingId) {
-        mockDb.update('quotes', editingId, quoteData);
+        await mockDb.update('quotes', editingId, quoteData);
       } else {
-        mockDb.add('quotes', quoteData);
+        await mockDb.add('quotes', quoteData);
       }
 
       // Refresh list
-      setQuotes(mockDb.get('quotes'));
+      const data = await mockDb.get('quotes');
+      setQuotes(data);
 
       // Auto-send WhatsApp
       const message = `*Presupuesto Automotriz*\n\nHola ${clientName}, aquí tienes el presupuesto para tu ${vehicleMake} ${vehicleModel}:\n\n` + 
@@ -155,6 +158,52 @@ export default function Quotes() {
     
     const waLink = formatWhatsAppLink(quote.phone, message);
     window.open(waLink, '_blank');
+  };
+
+  const exportPDF = (quote: any) => {
+    const doc = new jsPDF() as any;
+    doc.setFontSize(20);
+    doc.text("Presupuesto Automotriz", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Cliente: ${quote.clientName}`, 14, 30);
+    doc.text(`Vehículo: ${quote.vehicleMake} ${quote.vehicleModel}`, 14, 36);
+    doc.text(`Servicio: ${quote.serviceType}`, 14, 42);
+    doc.text(`Fecha: ${quote.createdAt?.toDate ? quote.createdAt.toDate().toLocaleDateString() : 'N/A'}`, 14, 48);
+
+    doc.autoTable({
+      startY: 55,
+      head: [['Descripción', 'Cant.', 'Precio', 'Subtotal']],
+      body: quote.items.map((i: any) => [
+        i.description,
+        i.quantity,
+        `$${i.price}`,
+        `$${i.price * i.quantity}`
+      ]),
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(14);
+    doc.text(`TOTAL: $${quote.total} MXN`, 14, finalY);
+    doc.save(`Presupuesto_${quote.clientName}.pdf`);
+  };
+
+  const exportAllToPDF = () => {
+    const doc = new jsPDF() as any;
+    doc.setFontSize(20);
+    doc.text("Historial de Presupuestos", 14, 20);
+    
+    doc.autoTable({
+      startY: 30,
+      head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
+      body: quotes.map(q => [
+        q.createdAt?.toDate ? q.createdAt.toDate().toLocaleDateString() : 'N/A',
+        q.clientName,
+        `${q.vehicleMake} ${q.vehicleModel}`,
+        q.serviceType,
+        `$${q.total}`
+      ]),
+    });
+    doc.save("Historial_Presupuestos.pdf");
   };
 
   if (view === 'form') {
@@ -367,12 +416,20 @@ export default function Quotes() {
           <h2 className="text-xl font-bold text-dark tracking-tight">Historial de Presupuestos</h2>
           <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Consulta y gestiona tus cotizaciones</p>
         </div>
-        <button 
-          onClick={() => { resetForm(); setView('form'); }}
-          className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
-        >
-          <Plus className="w-4 h-4" /> Crear Presupuesto
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={exportAllToPDF}
+            className="border border-gray-100 bg-white text-dark px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-all shadow-sm text-sm"
+          >
+            <Download className="w-4 h-4 text-primary" /> Exportar Historial
+          </button>
+          <button 
+            onClick={() => { resetForm(); setView('form'); }}
+            className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
+          >
+            <Plus className="w-4 h-4" /> Crear Presupuesto
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -408,6 +465,13 @@ export default function Quotes() {
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">
                        <button 
+                        onClick={() => exportPDF(quote)}
+                        className="p-2 text-dark hover:text-primary transition-colors"
+                        title="Exportar PDF"
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                       <button 
                         onClick={() => handleResend(quote)}
                         className="p-2 text-dark hover:text-green-600 transition-colors"
                         title="Reenviar WhatsApp"
@@ -422,10 +486,11 @@ export default function Quotes() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
                           if(confirm("¿Borrar presupuesto?")) {
-                            mockDb.delete('quotes', quote.id);
-                            setQuotes(mockDb.get('quotes'));
+                            await mockDb.delete('quotes', quote.id);
+                            const data = await mockDb.get('quotes');
+                            setQuotes(data);
                           }
                         }}
                         className="p-2 text-dark hover:text-red-500 transition-colors"

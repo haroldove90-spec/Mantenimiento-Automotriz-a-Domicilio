@@ -27,8 +27,9 @@ import Dashboard from './components/Dashboard';
 import AppointmentCalendar from './components/Calendar';
 import ClientsList from './components/ClientsList';
 import Quotes from './components/Quotes';
-import ServiceEvidence from './components/ServiceEvidence';
+import CarReception from './components/CarReception';
 import ServiceCatalog from './components/ServiceCatalog';
+import PwaInstallBanner from './components/PwaInstallBanner';
 
 class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
   constructor(props: any) {
@@ -77,27 +78,7 @@ export default function App() {
   }
 
   if (!user && false) { // Disable login check for direct access
-    return (
-      <div className="flex flex-col items-center justify-center h-screen bg-surface p-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-8 rounded-xl shadow-sm max-w-md w-full text-center border border-gray-100"
-        >
-          <div className="bg-primary w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-            <span className="text-2xl font-bold text-white">A</span>
-          </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">AutoDoc Home</h1>
-          <p className="text-slate-500 mb-8">Administrador Inteligente para Taller a Domicilio</p>
-          <button 
-            onClick={handleLogin}
-            className="w-full bg-dark text-white py-3 rounded-lg font-semibold hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-sm"
-          >
-            Iniciar Sesión con Google
-          </button>
-        </motion.div>
-      </div>
-    );
+    return null; // Should not happen with mock user, but ensuring no leak
   }
 
   return (
@@ -115,9 +96,9 @@ export default function App() {
             <div className="p-6 border-bottom flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="bg-primary w-8 h-8 rounded-lg flex items-center justify-center">
-                  <span className="font-bold text-lg text-white">A</span>
+                  <span className="font-bold text-lg text-dark">T</span>
                 </div>
-                <span className="font-bold text-lg tracking-tight uppercase">AutoDoc</span>
+                <span className="font-bold text-lg tracking-tight uppercase">Tafer</span>
               </div>
               <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden">
                 <X className="w-5 h-5 text-gray-400" />
@@ -125,12 +106,12 @@ export default function App() {
             </div>
 
             <nav className="flex-1 px-4 py-4 space-y-1">
-              <NavItem icon={<ClipboardList />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+              <NavItem icon={<ClipboardList />} label="Resumen" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
               <NavItem icon={<CalendarIcon />} label="Calendario" active={activeTab === 'calendar'} onClick={() => setActiveTab('calendar')} />
               <NavItem icon={<FileText />} label="Presupuestos" active={activeTab === 'quotes'} onClick={() => setActiveTab('quotes')} />
               <NavItem icon={<Wrench />} label="Servicios" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
-              <NavItem icon={<Camera />} label="Evidencia" active={activeTab === 'evidence'} onClick={() => setActiveTab('evidence')} />
-              <NavItem icon={<Users />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
+              <NavItem icon={<Camera />} label="Recepción de Autos" active={activeTab === 'reception'} onClick={() => setActiveTab('reception')} />
+              <NavItem icon={<Users />} label="Directorio de Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
             </nav>
 
             <div className="p-6 border-t border-gray-800 mt-auto">
@@ -187,12 +168,13 @@ export default function App() {
               {activeTab === 'calendar' && <AppointmentCalendar />}
               {activeTab === 'quotes' && <Quotes />}
               {activeTab === 'services' && <ServiceCatalog />}
-              {activeTab === 'evidence' && <ServiceEvidence />}
+              {activeTab === 'reception' && <CarReception />}
               {activeTab === 'clients' && <ClientsList />}
             </motion.div>
           </AnimatePresence>
         </div>
       </main>
+      <PwaInstallBanner />
     </div>
     </ErrorBoundary>
   );

@@ -25,7 +25,11 @@ export default function ServiceCatalog() {
   });
 
   useEffect(() => {
-    setServices(mockDb.get('services'));
+    const fetch = async () => {
+      const data = await mockDb.get('services');
+      setServices(data);
+    };
+    fetch();
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -34,38 +38,44 @@ export default function ServiceCatalog() {
     try {
       // 1. Sync Client Data (Automatic registration)
       if (formData.clientName && formData.phone) {
-        const clients = mockDb.query('clients', 'phone', formData.phone);
+        const clients = await mockDb.query('clients', 'phone', formData.phone);
         
         const clientData = {
           name: formData.clientName,
           phone: formData.phone,
           address: formData.address,
-          vehicleInfo: formData.vehicleInfo,
-          updatedAt: new Date()
+          vehicle_info: formData.vehicleInfo,
         };
 
         if (clients.length === 0) {
-          mockDb.add('clients', clientData);
+          await mockDb.add('clients', clientData);
         } else {
-          mockDb.update('clients', clients[0].id, clientData);
+          await mockDb.update('clients', clients[0].id, clientData);
         }
       }
 
       // 2. Save Service Record
       const data = {
-        ...formData,
-        basePrice: parseFloat(formData.basePrice as string),
-        updatedAt: new Date()
+        name: formData.name,
+        description: formData.description,
+        base_price: parseFloat(formData.basePrice as string),
+        estimated_duration: formData.estimatedDuration,
+        category: formData.category,
+        client_name: formData.clientName,
+        phone: formData.phone,
+        address: formData.address,
+        vehicle_info: formData.vehicleInfo
       };
 
       if (editingService) {
-        mockDb.update('services', editingService.id, data);
+        await mockDb.update('services', editingService.id, data);
       } else {
-        mockDb.add('services', data);
+        await mockDb.add('services', data);
       }
 
       // Refresh list
-      setServices(mockDb.get('services'));
+      const all = await mockDb.get('services');
+      setServices(all);
 
       setShowForm(false);
       setEditingService(null);
@@ -106,8 +116,9 @@ export default function ServiceCatalog() {
 
   const handleDelete = async (id: string) => {
     if (confirm("¿Eliminar este servicio?")) {
-      mockDb.delete('services', id);
-      setServices(mockDb.get('services'));
+      await mockDb.delete('services', id);
+      const all = await mockDb.get('services');
+      setServices(all);
     }
   };
 
