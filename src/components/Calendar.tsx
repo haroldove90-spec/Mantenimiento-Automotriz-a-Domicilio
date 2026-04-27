@@ -124,7 +124,16 @@ export default function AppointmentCalendar() {
       });
     } catch (error: any) {
       console.error("Error saving appointment:", error);
-      alert(`Error al guardar la cita: ${error.message || 'Verifica la consola para más detalles'}`);
+      let errorMsg = error.message || 'Verifica la consola para más detalles';
+      
+      if (errorMsg.includes('column') || errorMsg.includes('schema cache')) {
+        errorMsg += "\n\n⚠️ TIP: La base de datos no tiene las columnas necesarias. Ve a Configuración y presiona 'Copiar Script de Reparación SQL', luego ejecútalo en Supabase.";
+      }
+      if (errorMsg.includes('duplicate key')) {
+        errorMsg = "Ya existe un cliente con ese teléfono en la base de datos local de Supabase. \n\n⚠️ TIP: Ve a Configuración y presiona 'Copiar Script de Reparación SQL' para permitir teléfonos duplicados.";
+      }
+      
+      alert(`Error al guardar: ${errorMsg}`);
     } finally {
       setLoading(false);
     }

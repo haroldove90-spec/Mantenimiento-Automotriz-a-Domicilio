@@ -39,8 +39,18 @@ export default function ClientsList() {
       setClients(all);
       setView('list');
       setNewClient({ name: '', phone: '', address: '', vehicle_make: '', vehicle_model: '' });
-    } catch (error) {
-      alert("Error al crear cliente");
+    } catch (error: any) {
+      console.error("Error creating client:", error);
+      let errorMsg = error.message || 'Intenta de nuevo';
+      
+      if (errorMsg.includes('column') || errorMsg.includes('schema cache')) {
+        errorMsg += "\n\n⚠️ TIP: La base de datos no tiene las columnas necesarias. Ve a Configuración y usa el botón 'Copiar Script de Reparación SQL'.";
+      }
+      if (errorMsg.includes('duplicate key')) {
+        errorMsg = "Este teléfono ya está registrado. \n\n⚠️ TIP: Ve a Configuración y presiona 'Copiar Script de Reparación SQL' para permitir teléfonos duplicados.";
+      }
+      
+      alert(`Error al crear cliente: ${errorMsg}`);
     }
   };
 

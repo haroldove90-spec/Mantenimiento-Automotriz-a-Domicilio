@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Upload, RefreshCw } from 'lucide-react';
+import { Save, Upload, RefreshCw, AlertCircle } from 'lucide-react';
 import { mockDb } from '../lib/mockData';
 
 export default function Settings() {
@@ -88,6 +88,40 @@ export default function Settings() {
             </div>
 
             <div className="space-y-4 pt-4 border-t border-gray-50">
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl">
+                <div className="flex items-center gap-2 text-amber-700 font-bold text-xs uppercase mb-2">
+                  <AlertCircle className="w-4 h-4" /> Importante: Actualización de Base de Datos
+                </div>
+                <p className="text-[10px] text-amber-600 font-medium mb-3">
+                  Si ves errores como "Could not find column" o "duplicate key" al guardar, debes copiar el script SQL de ayuda y pegarlo en el editor de Supabase.
+                </p>
+                <button 
+                  onClick={() => {
+                    const sql = `-- EJECUTA ESTO EN EL SQL EDITOR DE SUPABASE PARA REPARAR ERRORES:
+-- 1. Reparar Tabla Clientes (Quitar restricción de duplicado y agregar columnas)
+ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_phone_key;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS vehicle_make TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS vehicle_model TEXT;
+
+-- 2. Reparar Tabla Citas (Agregar columnas faltantes)
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS address TEXT;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS service_type TEXT;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS client_name TEXT;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS vehicle_info TEXT;
+
+-- 3. Actualizar Cache (Opcional pero recomendado)
+-- Refresca la pestaña de tu navegador después de ejecutar esto.`;
+                    navigator.clipboard.writeText(sql);
+                    alert("¡Script SQL copiado! Pégalo en el SQL Editor de Supabase y ejecútalo.");
+                  }}
+                  className="w-full bg-amber-100 text-amber-700 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-amber-200 transition-colors"
+                >
+                  Copiar Script de Reparación SQL
+                </button>
+              </div>
+
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre de Aplicación</label>
