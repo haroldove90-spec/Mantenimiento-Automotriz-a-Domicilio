@@ -11,6 +11,7 @@ export default function Quotes() {
   const [view, setView] = useState<'list' | 'form' | 'details'>('list');
   const [quotes, setQuotes] = useState<any[]>([]);
   const [selectedQuote, setSelectedQuote] = useState<any>(null);
+  const [config, setConfig] = useState<any>(null);
   
   // Form State
   const [availableServices, setAvailableServices] = useState<any[]>([]);
@@ -28,8 +29,10 @@ export default function Quotes() {
     const fetch = async () => {
       const allQuotes = await mockDb.get('quotes');
       const allServices = await mockDb.get('services');
+      const settingsData = await mockDb.get('settings');
       setQuotes(allQuotes);
       setAvailableServices(allServices);
+      if (settingsData && settingsData.length > 0) setConfig(settingsData[0]);
     };
     fetch();
   }, []);
@@ -162,16 +165,24 @@ export default function Quotes() {
 
   const exportPDF = (quote: any) => {
     const doc = new jsPDF() as any;
+    
+    if (config?.logo_url) {
+      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+    }
+
     doc.setFontSize(20);
-    doc.text("Presupuesto Automotriz", 14, 20);
+    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.setFontSize(14);
+    doc.text("Presupuesto de Servicio", 40, 28);
+    
     doc.setFontSize(10);
-    doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, 30);
-    doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, 36);
-    doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, 42);
-    doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, 48);
+    doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, 40);
+    doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, 46);
+    doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, 52);
+    doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, 58);
 
     doc.autoTable({
-      startY: 55,
+      startY: 65,
       head: [['Descripción', 'Cant.', 'Precio', 'Subtotal']],
       body: quote.items.map((i: any) => [
         i.description,
@@ -179,6 +190,7 @@ export default function Quotes() {
         `$${i.price}`,
         `$${i.price * i.quantity}`
       ]),
+      headStyles: { fillColor: config?.button_color || '#000000' }
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 10;
@@ -189,11 +201,18 @@ export default function Quotes() {
 
   const exportAllToPDF = () => {
     const doc = new jsPDF() as any;
+    
+    if (config?.logo_url) {
+      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+    }
+
     doc.setFontSize(20);
-    doc.text("Historial de Presupuestos", 14, 20);
+    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.setFontSize(14);
+    doc.text("Historial de Presupuestos", 40, 28);
     
     doc.autoTable({
-      startY: 30,
+      startY: 40,
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
       body: quotes.map(q => [
         q.createdAt ? (q.createdAt.toDate ? q.createdAt.toDate().toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : 'N/A',
@@ -202,6 +221,7 @@ export default function Quotes() {
         q.service_type || q.serviceType,
         `$${q.total}`
       ]),
+      headStyles: { fillColor: config?.button_color || '#000000' }
     });
     doc.save("Historial_Presupuestos.pdf");
   };

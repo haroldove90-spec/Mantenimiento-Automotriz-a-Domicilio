@@ -23,6 +23,7 @@ export default function AppointmentCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [appointments, setAppointments] = useState<any[]>([]);
   const [services, setServices] = useState<any[]>([]);
+  const [config, setConfig] = useState<any>(null);
   const [selectedDay, setSelectedDay] = useState<Date | null>(new Date());
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -42,10 +43,12 @@ export default function AppointmentCalendar() {
 
   useEffect(() => {
     const fetch = async () => {
-      const data = await mockDb.get('appointments');
+      const appointmentsData = await mockDb.get('appointments');
       const allServices = await mockDb.get('services');
-      setAppointments(data);
+      const settingsData = await mockDb.get('settings');
+      setAppointments(appointmentsData);
       setServices(allServices);
+      if (settingsData && settingsData.length > 0) setConfig(settingsData[0]);
     };
     fetch();
   }, []);
@@ -138,10 +141,17 @@ export default function AppointmentCalendar() {
 
   const exportAllToPDF = () => {
     const doc = new jsPDF() as any;
-    doc.setFontSize(20);
-    doc.text("Historial de Citas - Tafer Servicios", 14, 22);
     
-    const data = appointments.map(a => [
+    if (config?.logo_url) {
+      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+    }
+    
+    doc.setFontSize(20);
+    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.setFontSize(14);
+    doc.text("Historial de Citas", 40, 28);
+    
+    const data = appointments.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(a => [
       a.date || 'N/A',
       a.time || 'N/A',
       a.client_name || a.clientName || 'N/A',
@@ -151,12 +161,13 @@ export default function AppointmentCalendar() {
     ]);
     
     doc.autoTable({
-      startY: 30,
+      startY: 40,
       head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
+      headStyles: { fillColor: config?.button_color || '#000000' }
     });
     
-    doc.save("Historial_Citas_Tafer.pdf");
+    doc.save(`Historial_Citas_${config?.app_name || 'Tafer'}.pdf`);
   };
 
   const handleResendWhatsApp = (app: any) => {
@@ -172,15 +183,21 @@ export default function AppointmentCalendar() {
 
   const exportSingleToPDF = (app: any) => {
     const doc = new jsPDF() as any;
-    doc.setFontSize(20);
-    doc.text("Comprobante de Cita", 14, 20);
+    if (config?.logo_url) {
+      doc.addImage(config.logo_url, 'PNG', 14, 10, 15, 15);
+    }
+    doc.setFontSize(18);
+    doc.text(config?.app_name || "Tafer Servicios", 35, 20);
+    doc.setFontSize(14);
+    doc.text("Comprobante de Cita", 14, 35);
     doc.setFontSize(10);
-    doc.text(`Cliente: ${app.client_name || app.clientName}`, 14, 30);
-    doc.text(`WhatsApp: ${app.phone}`, 14, 36);
-    doc.text(`Vehículo: ${app.vehicle_info || app.vehicleInfo}`, 14, 42);
-    doc.text(`Servicio: ${app.service_type || app.serviceType}`, 14, 48);
-    doc.text(`Fecha: ${app.date}`, 14, 54);
-    doc.text(`Hora: ${app.time}`, 14, 60);
+    doc.text(`Cliente: ${app.client_name || app.clientName}`, 14, 45);
+    doc.text(`WhatsApp: ${app.phone}`, 14, 51);
+    doc.text(`Vehículo: ${app.vehicle_info || app.vehicleInfo}`, 14, 57);
+    doc.text(`Servicio: ${app.service_type || app.serviceType}`, 14, 63);
+    doc.text(`Fecha: ${app.date}`, 14, 69);
+    doc.text(`Hora: ${app.time}`, 14, 75);
+    doc.text(`Notas: ${app.notes || 'N/A'}`, 14, 81);
     doc.save(`Cita_${app.client_name || app.clientName}.pdf`);
   };
 
@@ -492,6 +509,76 @@ export default function AppointmentCalendar() {
               <p className="text-gray-400 text-sm font-medium">No hay citas para este día</p>
             </div>
           )}
+        </div>
+      </div>
+      <div className="col-span-12 mt-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="font-bold text-dark uppercase tracking-widest text-sm">Relación Completa de Citas</h3>
+            <span className="text-[10px] bg-gray-100 px-3 py-1 rounded-full font-bold text-gray-500">{appointments.length} REGISTROS</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Fecha / Hora</th>
+                  <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cliente</th>
+                  <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Vehículo</th>
+                  <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Servicio</th>
+                  <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Estado</th>
+                  <th className="py-4 px-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {appointments.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((app) => (
+                  <tr key={app.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="py-4 px-6">
+                      <div className="text-xs font-bold text-dark">{app.date}</div>
+                      <div className="text-[10px] text-gray-400">{app.time}</div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="text-xs font-bold text-dark">{app.client_name || app.clientName}</div>
+                      <div className="text-[10px] text-gray-400">{app.phone}</div>
+                    </td>
+                    <td className="py-4 px-6 text-xs text-gray-500 font-medium">
+                      {app.vehicle_info || app.vehicleInfo}
+                    </td>
+                    <td className="py-4 px-6">
+                      <span className="text-[10px] font-bold px-2 py-1 rounded bg-blue-50 text-blue-600 uppercase">
+                        {app.service_type || app.serviceType}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6">
+                      <select 
+                        value={app.status || 'pendiente'}
+                        onChange={async (e) => {
+                          await mockDb.update('appointments', app.id, { status: e.target.value });
+                          const data = await mockDb.get('appointments');
+                          setAppointments(data);
+                        }}
+                        className="text-[10px] font-bold bg-transparent border-none focus:ring-0 cursor-pointer uppercase"
+                      >
+                        <option value="pendiente">Pendiente</option>
+                        <option value="confirmada">Confirmada</option>
+                        <option value="completada">Completada</option>
+                        <option value="cancelada">Cancelada</option>
+                      </select>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex gap-2">
+                        <button onClick={() => exportSingleToPDF(app)} className="p-1.5 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all text-gray-400 hover:text-primary">
+                          <Download size={14} />
+                        </button>
+                        <button onClick={() => handleResendWhatsApp(app)} className="p-1.5 hover:bg-white rounded border border-transparent hover:border-gray-200 transition-all text-gray-400 hover:text-green-500">
+                          <Phone size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

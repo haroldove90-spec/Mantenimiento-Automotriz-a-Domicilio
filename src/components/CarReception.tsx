@@ -9,6 +9,7 @@ export default function CarReception() {
   const [receptions, setReceptions] = useState<any[]>([]);
   const [catalogServices, setCatalogServices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
+  const [config, setConfig] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   
   // Form State
@@ -32,17 +33,26 @@ export default function CarReception() {
       const data = await mockDb.get('receptions');
       const clientsList = await mockDb.get('clients');
       const catalog = await mockDb.get('services');
+      const settingsData = await mockDb.get('settings');
       setReceptions(data || []);
       setClients(clientsList || []);
       setCatalogServices(catalog || []);
+      if (settingsData && settingsData.length > 0) setConfig(settingsData[0]);
     };
     fetch();
   }, []);
 
   const exportAllToPDF = () => {
     const doc = new jsPDF() as any;
+    
+    if (config?.logo_url) {
+      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+    }
+
     doc.setFontSize(20);
-    doc.text("Historial de Recepciones - Tafer Servicios", 14, 22);
+    doc.text(config?.app_name || "Tafer Servicios", 42, 22);
+    doc.setFontSize(14);
+    doc.text("Historial de Recepciones", 42, 30);
     
     const data = receptions.map(s => [
       s.date || 'N/A',
@@ -53,12 +63,13 @@ export default function CarReception() {
     ]);
     
     doc.autoTable({
-      startY: 30,
+      startY: 40,
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
+      headStyles: { fillColor: config?.button_color || '#000000' }
     });
     
-    doc.save("Historial_Recepciones_Tafer.pdf");
+    doc.save(`Historial_Recepciones_${config?.app_name || 'Tafer'}.pdf`);
   };
 
   const handleClientSelect = (clientId: string) => {
@@ -153,19 +164,26 @@ export default function CarReception() {
 
   const exportPDF = (service: any) => {
     const doc = new jsPDF() as any;
+    
+    if (config?.logo_url) {
+      doc.addImage(config.logo_url, 'PNG', 14, 10, 20, 20);
+    }
+
     doc.setFontSize(20);
-    doc.text("Recepción de Vehículo", 14, 20);
+    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.setFontSize(14);
+    doc.text("Recepción de Vehículo", 14, 40);
     
     doc.setFontSize(10);
-    doc.text(`Cliente: ${service.client_name || service.clientName}`, 14, 30);
-    doc.text(`Vehículo: ${service.vehicle_make || service.vehicleMake} ${service.vehicle_model || service.vehicleModel}`, 14, 36);
-    doc.text(`Servicio: ${service.service_type || service.serviceType}`, 14, 42);
-    doc.text(`Fecha: ${service.date}`, 14, 48);
-    doc.text(`Estatus: ${service.status}`, 14, 54);
+    doc.text(`Cliente: ${service.client_name || service.clientName}`, 14, 50);
+    doc.text(`Vehículo: ${service.vehicle_make || service.vehicleMake} ${service.vehicle_model || service.vehicleModel}`, 14, 56);
+    doc.text(`Servicio: ${service.service_type || service.serviceType}`, 14, 62);
+    doc.text(`Fecha: ${service.date}`, 14, 68);
+    doc.text(`Estatus: ${service.status}`, 14, 74);
 
     if (service.photos && service.photos.length > 0) {
-      doc.text("Evidencias:", 14, 65);
-      let y = 70;
+      doc.text("Evidencias:", 14, 85);
+      let y = 90;
       service.photos.forEach((photo: string, index: number) => {
         if (y > 220) { doc.addPage(); y = 20; }
         doc.addImage(photo, 'JPEG', 14, y, 50, 40);
@@ -173,7 +191,7 @@ export default function CarReception() {
       });
     }
     
-    doc.save(`Recepcion_${service.clientName}_${service.date}.pdf`);
+    doc.save(`Recepcion_${service.client_name || service.clientName}_${service.date}.pdf`);
   };
 
   return (

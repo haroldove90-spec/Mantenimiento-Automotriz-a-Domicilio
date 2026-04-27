@@ -69,20 +69,22 @@ CREATE TABLE IF NOT EXISTS receptions (
   evidences TEXT[] DEFAULT '{}'
 );
 
+-- 6. Configuración de la App
+CREATE TABLE IF NOT EXISTS settings (
+  id UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000000',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  app_name TEXT DEFAULT 'Tafer Servicios',
+  logo_url TEXT DEFAULT 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png',
+  nav_color TEXT DEFAULT '#000000',
+  button_color TEXT DEFAULT '#000000',
+  link_color TEXT DEFAULT '#2563eb'
+);
+
+INSERT INTO settings (id, app_name, logo_url, nav_color, button_color, link_color) 
+VALUES ('00000000-0000-0000-0000-000000000000', 'Tafer Servicios', 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png', '#000000', '#000000', '#2563eb')
+ON CONFLICT (id) DO NOTHING;
+
 -- HABILITAR ACCESO PÚBLICO (Políticas RLS)
--- Solo usa esto para pruebas iniciales sin autenticación
-ALTER TABLE services ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Read" ON services FOR SELECT USING (true);
-CREATE POLICY "Public Write" ON services FOR ALL USING (true) WITH CHECK (true);
-
-ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Write Clients" ON clients FOR ALL USING (true) WITH CHECK (true);
-
-ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Write Apps" ON appointments FOR ALL USING (true) WITH CHECK (true);
-
-ALTER TABLE quotes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Write Quotes" ON quotes FOR ALL USING (true) WITH CHECK (true);
-
-ALTER TABLE receptions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Public Write Receptions" ON receptions FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
+CREATE POLICY "Public Update Settings" ON settings FOR UPDATE USING (true);
