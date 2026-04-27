@@ -12,8 +12,9 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+// import { db } from '../lib/firebase';
+// import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { mockDb } from '../lib/mockData';
 import { geminiService } from '../services/geminiService';
 import { formatWhatsAppLink, getMaintenanceMessage } from '../lib/utils';
 
@@ -24,12 +25,7 @@ export default function ServiceHistory() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    const q = query(collection(db, 'service_records'), orderBy('completedAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setHistory(docs);
-    });
-    return () => unsubscribe();
+    setHistory(mockDb.get('service_records'));
   }, []);
 
   const handleGetReminders = async () => {

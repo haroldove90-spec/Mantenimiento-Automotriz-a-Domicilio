@@ -20,8 +20,9 @@ import {
   Wrench
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { auth, db } from './lib/firebase';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+// Firebase temporarily disabled
+// import { auth, db } from './lib/firebase';
+// import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import Dashboard from './components/Dashboard';
 import AppointmentCalendar from './components/Calendar';
 import ClientsList from './components/ClientsList';
@@ -29,30 +30,43 @@ import Quotes from './components/Quotes';
 import ServiceEvidence from './components/ServiceEvidence';
 import ServiceCatalog from './components/ServiceCatalog';
 
+class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return <div className="p-8 text-center"><h1>Algo salió mal. Por favor recarga la página.</h1></div>;
+    return this.props.children;
+  }
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>({
+    displayName: 'Administrador',
+    email: 'admin@autodoc.com',
+    photoURL: 'https://ui-avatars.com/api/?name=Admin&background=0284c7&color=fff'
+  });
+  const [loading, setLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setLoading(false);
-    });
-    return () => unsubscribe();
+    // No auth listener for now
+    setLoading(false);
   }, []);
 
   const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed", error);
-    }
+    // Simple mock login
+    setUser({
+      displayName: 'Administrador',
+      email: 'admin@autodoc.com',
+      photoURL: 'https://ui-avatars.com/api/?name=Admin&background=0284c7&color=fff'
+    });
   };
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = () => setUser(null);
 
   if (loading) {
     return (
@@ -87,7 +101,8 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-surface overflow-hidden font-sans text-dark">
+    <ErrorBoundary>
+      <div className="flex h-screen bg-surface overflow-hidden font-sans text-dark">
       {/* Sidebar */}
       <AnimatePresence mode="wait">
         {isSidebarOpen && (
@@ -120,11 +135,15 @@ export default function App() {
 
             <div className="p-6 border-t border-gray-800 mt-auto">
               <div className="flex items-center gap-3 mb-6">
-                <img src={user.photoURL} alt={user.displayName} className="w-10 h-10 rounded-full bg-gray-700" />
-                <div className="flex flex-col text-sm truncate">
-                  <span className="font-semibold">{user.displayName}</span>
-                  <span className="text-gray-500 text-xs truncate">{user.email}</span>
-                </div>
+                {user && (
+                  <>
+                    <img src={user.photoURL} alt={user.displayName} className="w-10 h-10 rounded-full bg-gray-700" />
+                    <div className="flex flex-col text-sm truncate">
+                      <span className="font-semibold">{user.displayName}</span>
+                      <span className="text-gray-500 text-xs truncate">{user.email}</span>
+                    </div>
+                  </>
+                )}
               </div>
               <button 
                 onClick={handleLogout}
@@ -175,6 +194,7 @@ export default function App() {
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   );
 }
 

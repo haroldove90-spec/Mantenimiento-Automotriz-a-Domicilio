@@ -14,9 +14,10 @@ import {
 import { es } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Plus, MapPin, Clock, X, Phone, User as UserIcon, Car, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { db, auth } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+// import { db, auth } from '../lib/firebase';
+// import { collection, query, onSnapshot, addDoc, serverTimestamp, getDocs, where, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { formatWhatsAppLink, getAppointmentReminder } from '../lib/utils';
+import { mockDb } from '../lib/mockData';
 
 export default function AppointmentCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -36,12 +37,7 @@ export default function AppointmentCalendar() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'appointments'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAppointments(docs);
-    });
-    return () => unsubscribe();
+    setAppointments(mockDb.get('appointments'));
   }, []);
 
   const handleSaveAppointment = async (e: React.FormEvent) => {
@@ -50,13 +46,8 @@ export default function AppointmentCalendar() {
     setLoading(true);
 
     try {
-      // 1. Create/Get Client (we'll just create a new one for now or store details)
-      // For simplicity and following the user request closely, we'll store the strings
-      // but ensure we meet the "Save/Show" requirement.
-      
       // 1. Sync Client Data
-      const clientQuery = query(collection(db, 'clients'), where('phone', '==', formData.phone));
-      const clientSnap = await getDocs(clientQuery);
+      const clients = mockDb.query('clients', 'phone', formData.phone);
       
       const clientData = {
         name: formData.clientName,
@@ -64,16 +55,13 @@ export default function AppointmentCalendar() {
         vehicleMake: formData.make,
         vehicleModel: formData.model,
         address: formData.address,
-        updatedAt: serverTimestamp()
+        updatedAt: new Date()
       };
 
-      if (clientSnap.empty) {
-        await addDoc(collection(db, 'clients'), {
-          ...clientData,
-          createdAt: serverTimestamp()
-        });
+      if (clients.length === 0) {
+        mockDb.add('clients', clientData);
       } else {
-        await updateDoc(doc(db, 'clients', clientSnap.docs[0].id), clientData);
+        mockDb.update('clients', clients[0].id, clientData);
       }
 
       const appointmentDate = new Date(selectedDay);
@@ -90,10 +78,13 @@ export default function AppointmentCalendar() {
         time: formData.time,
         status: 'pending',
         notes: formData.notes,
-        createdAt: serverTimestamp(),
+        createdAt: new Date(),
       };
 
-      await addDoc(collection(db, 'appointments'), newAppointment);
+      mockDb.add('appointments', newAppointment);
+
+      // Refresh list
+      setAppointments(mockDb.get('appointments'));
 
       // WhatsApp Confirmation
       const whatsappMsg = getAppointmentReminder(
@@ -352,9 +343,10 @@ export default function AppointmentCalendar() {
                     {app.time || '00:00'}
                   </span>
                   <button 
-                    onClick={async () => {
+                    onClick={() => {
                       if(confirm("¿Borrar cita?")) {
-                        await deleteDoc(doc(db, 'appointments', app.id));
+                        mockDb.delete('appointments', app.id);
+                        setAppointments(mockDb.get('appointments'));
                       }
                     }}
                     className="p-1 text-gray-300 hover:text-red-500 transition-colors"

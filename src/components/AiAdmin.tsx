@@ -3,8 +3,9 @@ import { Send, Bot, Sparkles, Plus, ClipboardCheck, MessageCircle, MessageSquare
 import { motion, AnimatePresence } from 'motion/react';
 import { geminiService } from '../services/geminiService';
 import { formatWhatsAppLink } from '../lib/utils';
-import { db } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+// import { db } from '../lib/firebase';
+// import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { mockDb } from '../lib/mockData';
 
 export default function AiAdmin() {
   const [inputText, setInputText] = useState('');
@@ -27,10 +28,10 @@ export default function AiAdmin() {
   const saveCita = async () => {
     if (!aiResponse) return;
     try {
-      await addDoc(collection(db, 'appointments'), {
+      mockDb.add('appointments', {
         ...aiResponse,
         status: 'pending',
-        createdAt: serverTimestamp(),
+        createdAt: new Date(),
       });
       alert('Cita guardada correctamente');
       setAiResponse(null);

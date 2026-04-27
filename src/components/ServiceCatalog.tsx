@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Search, Wrench, Clock, DollarSign, User, Phone, MapPin, Car } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
+// import { db } from '../lib/firebase';
+// import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, where, getDocs } from 'firebase/firestore';
+import { mockDb } from '../lib/mockData';
 
 export default function ServiceCatalog() {
   const [services, setServices] = useState<any[]>([]);
@@ -24,11 +25,7 @@ export default function ServiceCatalog() {
   });
 
   useEffect(() => {
-    const q = query(collection(db, 'services'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-    return () => unsubscribe();
+    setServices(mockDb.get('services'));
   }, []);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -37,24 +34,20 @@ export default function ServiceCatalog() {
     try {
       // 1. Sync Client Data (Automatic registration)
       if (formData.clientName && formData.phone) {
-        const clientQuery = query(collection(db, 'clients'), where('phone', '==', formData.phone));
-        const clientSnap = await getDocs(clientQuery);
+        const clients = mockDb.query('clients', 'phone', formData.phone);
         
         const clientData = {
           name: formData.clientName,
           phone: formData.phone,
           address: formData.address,
           vehicleInfo: formData.vehicleInfo,
-          updatedAt: serverTimestamp()
+          updatedAt: new Date()
         };
 
-        if (clientSnap.empty) {
-          await addDoc(collection(db, 'clients'), {
-            ...clientData,
-            createdAt: serverTimestamp()
-          });
+        if (clients.length === 0) {
+          mockDb.add('clients', clientData);
         } else {
-          await updateDoc(doc(db, 'clients', clientSnap.docs[0].id), clientData);
+          mockDb.update('clients', clients[0].id, clientData);
         }
       }
 
@@ -62,14 +55,17 @@ export default function ServiceCatalog() {
       const data = {
         ...formData,
         basePrice: parseFloat(formData.basePrice as string),
-        updatedAt: serverTimestamp()
+        updatedAt: new Date()
       };
 
       if (editingService) {
-        await updateDoc(doc(db, 'services', editingService.id), data);
+        mockDb.update('services', editingService.id, data);
       } else {
-        await addDoc(collection(db, 'services'), { ...data, createdAt: serverTimestamp() });
+        mockDb.add('services', data);
       }
+
+      // Refresh list
+      setServices(mockDb.get('services'));
 
       setShowForm(false);
       setEditingService(null);
@@ -110,7 +106,8 @@ export default function ServiceCatalog() {
 
   const handleDelete = async (id: string) => {
     if (confirm("¿Eliminar este servicio?")) {
-      await deleteDoc(doc(db, 'services', id));
+      mockDb.delete('services', id);
+      setServices(mockDb.get('services'));
     }
   };
 
@@ -131,7 +128,7 @@ export default function ServiceCatalog() {
           onClick={() => { setEditingService(null); setFormData({ name: '', description: '', basePrice: '', estimatedDuration: '', category: 'Mantenimiento', clientName: '', phone: '', address: '', vehicleInfo: '' }); setShowForm(true); }}
           className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
         >
-          <Plus className="w-4 h-4" /> Nuevo Servicio
+          <Plus className="w-4 h-4" /> Nuevo Registro de Servicio
         </button>
       </div>
 
@@ -193,7 +190,7 @@ export default function ServiceCatalog() {
               className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
             >
               <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50">
-                <h3 className="font-bold text-dark">{editingService ? 'Editar Registro' : 'Nuevo Registro de Servicio'}</h3>
+                <h3 className="font-bold text-dark">{editingService ? 'Editar Servicio' : 'Nuevo Registro de Trabajo'}</h3>
                 <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-dark">×</button>
               </div>
               <form onSubmit={handleSave} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">

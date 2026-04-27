@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Plus, Phone, Mail, MapPin, ChevronRight, User, ArrowLeft, History, FileText, Calendar, Edit2, Save, Download, Trash2, Car } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, orderBy, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
+// import { db } from '../lib/firebase';
+// import { collection, query, onSnapshot, orderBy, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { mockDb } from '../lib/mockData';
 
 export default function ClientsList() {
   const [clients, setClients] = useState<any[]>([]);
@@ -15,26 +16,19 @@ export default function ClientsList() {
   const [loadingHistory, setLoadingHistory] = useState(false);
 
   useEffect(() => {
-    const q = query(collection(db, 'clients'), orderBy('name', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setClients(docs);
-    });
-    return () => unsubscribe();
+    setClients(mockDb.get('clients'));
   }, []);
 
   const fetchClientHistory = async (client: any) => {
     if (!client.phone) return;
     setLoadingHistory(true);
     try {
-      const qAppts = query(collection(db, 'appointments'), where('phone', '==', client.phone));
-      const qQuotes = query(collection(db, 'quotes'), where('phone', '==', client.phone));
-      
-      const [apptsSnap, quotesSnap] = await Promise.all([getDocs(qAppts), getDocs(qQuotes)]);
+      const appts = mockDb.query('appointments', 'phone', client.phone);
+      const quotes = mockDb.query('quotes', 'phone', client.phone);
       
       setHistory({
-        appointments: apptsSnap.docs.map(d => ({ id: d.id, ...d.data() })),
-        quotes: quotesSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+        appointments: appts,
+        quotes: quotes
       });
     } catch (error) {
       console.error("Error loading history:", error);
@@ -54,7 +48,8 @@ export default function ClientsList() {
     if (!selectedClient) return;
     try {
       const { id, ...data } = selectedClient;
-      await updateDoc(doc(db, 'clients', id), data);
+      mockDb.update('clients', id, data);
+      setClients(mockDb.get('clients'));
       setView('details');
     } catch (error) {
       alert("Error al actualizar cliente");
@@ -65,7 +60,8 @@ export default function ClientsList() {
     e.stopPropagation();
     if (confirm("¿Estás seguro de eliminar este cliente? Se borrará su historial de este catálogo (aunque las citas y presupuestos permanezcan en sus módulos).")) {
       try {
-        await deleteDoc(doc(db, 'clients', id));
+        mockDb.delete('clients', id);
+        setClients(mockDb.get('clients'));
         if (selectedClient?.id === id) setView('list');
       } catch (error) {
         alert("Error al eliminar cliente");

@@ -3,8 +3,9 @@ import { Plus, Trash2, Send, Download, FileText, CheckCircle, MessageCircle, Sea
 import { motion, AnimatePresence } from 'motion/react';
 import { geminiService } from '../services/geminiService';
 import { formatWhatsAppLink } from '../lib/utils';
-import { db } from '../lib/firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy, getDocs, where, deleteDoc } from 'firebase/firestore';
+// import { db } from '../lib/firebase';
+// import { collection, query, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, orderBy, getDocs, where, deleteDoc } from 'firebase/firestore';
+import { mockDb } from '../lib/mockData';
 
 export default function Quotes() {
   const [view, setView] = useState<'list' | 'form' | 'details'>('list');
@@ -24,20 +25,8 @@ export default function Quotes() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const qQuotes = query(collection(db, 'quotes'), orderBy('createdAt', 'desc'));
-    const unsubQuotes = onSnapshot(qQuotes, (snapshot) => {
-      setQuotes(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    const qServices = query(collection(db, 'services'));
-    const unsubServices = onSnapshot(qServices, (snapshot) => {
-      setAvailableServices(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
-
-    return () => {
-      unsubQuotes();
-      unsubServices();
-    };
+    setQuotes(mockDb.get('quotes'));
+    setAvailableServices(mockDb.get('services'));
   }, []);
 
   const addServiceItem = (service: any) => {
@@ -89,8 +78,7 @@ export default function Quotes() {
     setLoading(true);
     try {
       // Sync Client Data
-      const clientQuery = query(collection(db, 'clients'), where('phone', '==', phone));
-      const clientSnap = await getDocs(clientQuery);
+      const clients = mockDb.query('clients', 'phone', phone);
       
       const clientData = {
         name: clientName,
@@ -98,16 +86,13 @@ export default function Quotes() {
         vehicleMake: vehicleMake,
         vehicleModel: vehicleModel,
         address: address,
-        updatedAt: serverTimestamp()
+        updatedAt: new Date()
       };
 
-      if (clientSnap.empty) {
-        await addDoc(collection(db, 'clients'), {
-          ...clientData,
-          createdAt: serverTimestamp()
-        });
+      if (clients.length === 0) {
+        mockDb.add('clients', clientData);
       } else {
-        await updateDoc(doc(db, 'clients', clientSnap.docs[0].id), clientData);
+        mockDb.update('clients', clients[0].id, clientData);
       }
 
       const quoteData = {
@@ -121,19 +106,17 @@ export default function Quotes() {
         total,
         currency: 'MXN',
         status: 'sent',
-        updatedAt: serverTimestamp()
+        updatedAt: new Date()
       };
 
-      let currentId = editingId;
       if (editingId) {
-        await updateDoc(doc(db, 'quotes', editingId), quoteData);
+        mockDb.update('quotes', editingId, quoteData);
       } else {
-        const docRef = await addDoc(collection(db, 'quotes'), {
-          ...quoteData,
-          createdAt: serverTimestamp()
-        });
-        currentId = docRef.id;
+        mockDb.add('quotes', quoteData);
       }
+
+      // Refresh list
+      setQuotes(mockDb.get('quotes'));
 
       // Auto-send WhatsApp
       const message = `*Presupuesto Automotriz*\n\nHola ${clientName}, aquí tienes el presupuesto para tu ${vehicleMake} ${vehicleModel}:\n\n` + 
@@ -439,9 +422,10 @@ export default function Quotes() {
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={async () => {
+                        onClick={() => {
                           if(confirm("¿Borrar presupuesto?")) {
-                            await deleteDoc(doc(db, 'quotes', quote.id));
+                            mockDb.delete('quotes', quote.id);
+                            setQuotes(mockDb.get('quotes'));
                           }
                         }}
                         className="p-2 text-dark hover:text-red-500 transition-colors"
