@@ -1,81 +1,82 @@
--- Tabla de Clientes
-CREATE TABLE clients (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
-    phone TEXT,
-    address TEXT,
-    vehicle_make TEXT,
-    vehicle_model TEXT,
-    vehicle_info TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Table: services
+CREATE TABLE IF NOT EXISTS services (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  name TEXT NOT NULL,
+  description TEXT,
+  base_price NUMERIC DEFAULT 0,
+  estimated_duration TEXT,
+  category TEXT
 );
 
--- Tabla de Catálogo de Servicios
-CREATE TABLE services (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
-    description TEXT,
-    base_price NUMERIC,
-    estimated_duration TEXT,
-    category TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Table: clients
+CREATE TABLE IF NOT EXISTS clients (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  name TEXT NOT NULL,
+  phone TEXT,
+  vehicle_make TEXT,
+  vehicle_model TEXT,
+  address TEXT
 );
 
--- Tabla de Citas
-CREATE TABLE appointments (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    client_name TEXT NOT NULL,
-    phone TEXT,
-    vehicle_info TEXT,
-    service_type TEXT,
-    address TEXT,
-    date DATE,
-    time TEXT,
-    status TEXT DEFAULT 'pendiente',
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Table: appointments
+CREATE TABLE IF NOT EXISTS appointments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  client_name TEXT,
+  phone TEXT,
+  vehicle_info TEXT,
+  service_type TEXT,
+  address TEXT,
+  date DATE,
+  time TEXT,
+  status TEXT DEFAULT 'pendiente',
+  notes TEXT
 );
 
--- Tabla de Presupuestos
-CREATE TABLE quotes (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    client_name TEXT NOT NULL,
-    phone TEXT,
-    address TEXT,
-    vehicle_make TEXT,
-    vehicle_model TEXT,
-    service_type TEXT,
-    items JSONB DEFAULT '[]',
-    total NUMERIC,
-    status TEXT DEFAULT 'enviado',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Table: quotes (Presupuestos)
+CREATE TABLE IF NOT EXISTS quotes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  client_name TEXT,
+  phone TEXT,
+  vehicle_info TEXT,
+  vehicle_make TEXT,
+  vehicle_model TEXT,
+  service_type TEXT,
+  items JSONB,
+  total NUMERIC,
+  status TEXT DEFAULT 'sent'
 );
 
--- Tabla de Recepción de Autos
-CREATE TABLE receptions (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    client_id UUID REFERENCES clients(id),
-    client_name TEXT NOT NULL,
-    vehicle_make TEXT,
-    vehicle_model TEXT,
-    service_type TEXT,
-    status TEXT DEFAULT 'en proceso',
-    date DATE DEFAULT CURRENT_DATE,
-    photos TEXT[] DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- Table: receptions (Entradas de taller)
+CREATE TABLE IF NOT EXISTS receptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  client_name TEXT,
+  vehicle_make TEXT,
+  vehicle_model TEXT,
+  service_type TEXT,
+  date DATE,
+  status TEXT DEFAULT 'en proceso',
+  inventory JSONB,
+  evidences TEXT[]
 );
 
--- Habilitar RLS (Row Level Security) - Para simplificar en este demo, permitiremos acceso total
--- En producción deberías restringir esto
-ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+-- Habilitar RLS (Row Level Security) para acceso público si no usas Auth aún
+-- Si prefieres seguridad total, configura políticas de acceso.
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
-ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE quotes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE receptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access" ON services FOR ALL USING (true) WITH CHECK (true);
 
--- Políticas de acceso (Permitir todo para el demo anon)
-CREATE POLICY "Allow all for anon" ON clients FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON services FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON appointments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON quotes FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Allow all for anon" ON receptions FOR ALL USING (true) WITH CHECK (true);
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access" ON clients FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access" ON appointments FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE quotes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access" ON quotes FOR ALL USING (true) WITH CHECK (true);
+
+ALTER TABLE receptions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public full access" ON receptions FOR ALL USING (true) WITH CHECK (true);
