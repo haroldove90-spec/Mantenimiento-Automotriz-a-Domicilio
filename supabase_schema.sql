@@ -3,8 +3,10 @@
 -- Copia y pega esto en el "SQL Editor" de Supabase
 -- ==========================================
 
--- NOTA IMPORTANTE: Si recibes un error sobre la columna "address", 
--- este script la agregará automáticamente si ya existe la tabla.
+-- NOTA IMPORTANTE: Si recibes errores como "Could not find the 'address' column",
+-- asegúrate de ejecutar este script COMPLETAMENTE.
+-- Después de ejecutarlo, si el error persiste en la App, refresca la pestaña del navegador 
+-- para que Supabase actualice su caché de esquema.
 
 -- 1. Catálogo de Servicios
 CREATE TABLE IF NOT EXISTS services (
@@ -28,7 +30,7 @@ CREATE TABLE IF NOT EXISTS clients (
   address TEXT
 );
 
--- MIGRACIÓN: Asegurar que la columna 'address' existe en 'clients'
+-- MIGRACIÓN DE CLIENTES
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='address') THEN
@@ -36,6 +38,12 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='name') THEN
         ALTER TABLE clients ADD COLUMN name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_make') THEN
+        ALTER TABLE clients ADD COLUMN vehicle_make TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_model') THEN
+        ALTER TABLE clients ADD COLUMN vehicle_model TEXT;
     END IF;
 END $$;
 
@@ -54,11 +62,17 @@ CREATE TABLE IF NOT EXISTS appointments (
   notes TEXT
 );
 
--- MIGRACIÓN: Asegurar que la columna 'address' existe en 'appointments'
+-- MIGRACIÓN DE CITAS
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='address') THEN
         ALTER TABLE appointments ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='client_name') THEN
+        ALTER TABLE appointments ADD COLUMN client_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='vehicle_info') THEN
+        ALTER TABLE appointments ADD COLUMN vehicle_info TEXT;
     END IF;
 END $$;
 

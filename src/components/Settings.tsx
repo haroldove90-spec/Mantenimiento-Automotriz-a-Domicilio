@@ -87,32 +87,37 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 border-t border-gray-50">
+            <div className="space-y-4 pt-4 border-t border-gray-50">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-gray-400 uppercase">Mostrar Nombre de la App</label>
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre de Aplicación</label>
+                  <p className="text-[9px] text-gray-400 font-medium">Muestra el nombre junto al logotipo.</p>
+                </div>
                 <button 
                   onClick={() => setConfig({...config, show_app_name: !config.show_app_name})}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${config.show_app_name ? 'bg-dark' : 'bg-gray-200'}`}
+                  className={`w-10 h-5 rounded-full transition-all relative ${config.show_app_name ? 'bg-dark' : 'bg-gray-200'}`}
                 >
-                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${config.show_app_name ? 'left-7' : 'left-1'}`} />
+                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.show_app_name ? 'left-5.5' : 'left-0.5'}`} />
                 </button>
               </div>
-            </div>
 
-            <div className="space-y-4 pt-2 border-t border-gray-50">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-gray-400 uppercase">Tamaño del Logo (px)</label>
-                <span className="text-xs font-bold text-gray-400">{config.logo_size}px</span>
+              <div className="space-y-3 pt-2 border-t border-gray-50">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tamaño del Logo</label>
+                    <p className="text-[9px] text-gray-400 font-medium">Ajusta el alto del logotipo ({config.logo_size}px).</p>
+                  </div>
+                </div>
+                <input 
+                  type="range" 
+                  min="20" 
+                  max="120" 
+                  step="5"
+                  value={config.logo_size}
+                  onChange={e => setConfig({...config, logo_size: parseInt(e.target.value)})}
+                  className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-dark"
+                />
               </div>
-              <input 
-                type="range" 
-                min="20" 
-                max="120" 
-                step="5"
-                value={config.logo_size}
-                onChange={e => setConfig({...config, logo_size: parseInt(e.target.value)})}
-                className="w-full accent-dark h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
-              />
             </div>
           </div>
         </div>

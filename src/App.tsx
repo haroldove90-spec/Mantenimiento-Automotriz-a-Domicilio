@@ -99,13 +99,13 @@ export default function App() {
         className="lg:hidden h-14 bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 flex items-center justify-between z-50 sticky top-0"
       >
         <div className="flex items-center gap-2">
-           <img 
+            <img 
                src={config?.logo_url || "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png"} 
                alt="Logo" 
                className="object-contain" 
                style={{ height: config?.logo_size ? Math.min(config.logo_size, 40) : 32, width: 'auto' }}
              />
-          {config?.show_app_name !== false && (
+          {config?.show_app_name !== false && config?.show_app_name !== 'false' && (
             <span className="font-black text-xs tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
           )}
         </div>
@@ -228,7 +228,7 @@ function SidebarContent({ activeTab, setActiveTab, user, handleLogout, onClose, 
             className="object-contain" 
             style={{ height: config?.logo_size || 40, width: 'auto' }}
           />
-          {config?.show_app_name !== false && (
+          {config?.show_app_name !== false && config?.show_app_name !== 'false' && (
             <span className="font-black text-xl tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
           )}
         </div>
