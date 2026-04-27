@@ -181,17 +181,17 @@ export default function Quotes() {
     doc.setFontSize(20);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Presupuesto de Servicio", headerX, headerY + 8);
+    doc.text("Presupuesto de Servicio", headerX, headerY + 10);
     
     doc.setFontSize(10);
-    const startY = Math.max(headerY + 20, 40);
+    const startY = Math.max(headerY + 25, 55);
     doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, startY);
     doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, startY + 6);
     doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, startY + 12);
     doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, startY + 18);
 
     doc.autoTable({
-      startY: startY + 25,
+      startY: startY + 30,
       head: [['Descripción', 'Cant.', 'Precio', 'Subtotal']],
       body: quote.items.map((i: any) => [
         i.description,
@@ -225,10 +225,10 @@ export default function Quotes() {
     doc.setFontSize(20);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Presupuestos", headerX, headerY + 8);
+    doc.text("Historial de Presupuestos", headerX, headerY + 10);
     
     doc.autoTable({
-      startY: Math.max(headerY + 20, 40),
+      startY: Math.max(headerY + 25, 55),
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
       body: quotes.map(q => [
         q.createdAt ? (q.createdAt.toDate ? q.createdAt.toDate().toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : 'N/A',

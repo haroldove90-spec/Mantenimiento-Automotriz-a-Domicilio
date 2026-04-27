@@ -127,16 +127,16 @@ export default function ClientsList() {
     doc.setFontSize(20);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Cliente", 14, Math.max(headerY + 15, 40));
+    doc.text("Historial de Cliente", 14, Math.max(headerY + 20, 50));
     
     doc.setFontSize(10);
-    const startY = Math.max(headerY + 25, 50);
+    const startY = Math.max(headerY + 30, 60);
     doc.text(`Cliente: ${selectedClient.name}`, 14, startY);
     doc.text(`Teléfono: ${selectedClient.phone}`, 14, startY + 6);
     doc.text(`Dirección: ${selectedClient.address || 'N/A'}`, 14, startY + 12);
     doc.text(`Vehículo: ${selectedClient.vehicle_make || selectedClient.vehicleMake} ${selectedClient.vehicle_model || selectedClient.vehicleModel}`, 14, startY + 18);
     
-    const tableStartY = startY + 30;
+    const tableStartY = startY + 35;
     doc.setFontSize(14);
     doc.text("Presupuestos", 14, tableStartY);
     

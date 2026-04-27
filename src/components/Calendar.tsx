@@ -166,7 +166,7 @@ export default function AppointmentCalendar() {
     doc.setFontSize(20);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Citas", headerX, headerY + 8);
+    doc.text("Historial de Citas", headerX, headerY + 10);
     
     const data = appointments.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(a => [
       a.date || 'N/A',
@@ -178,7 +178,7 @@ export default function AppointmentCalendar() {
     ]);
     
     doc.autoTable({
-      startY: Math.max(headerY + 20, 45),
+      startY: Math.max(headerY + 25, 55),
       head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
       headStyles: { fillColor: config?.button_color || '#000000' }
@@ -213,9 +213,9 @@ export default function AppointmentCalendar() {
     doc.setFontSize(18);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Comprobante de Cita", 14, Math.max(headerY + 15, 40));
+    doc.text("Comprobante de Cita", 14, Math.max(headerY + 20, 50));
     doc.setFontSize(10);
-    const startY = Math.max(headerY + 25, 50);
+    const startY = Math.max(headerY + 30, 60);
     doc.text(`Cliente: ${app.client_name || app.clientName}`, 14, startY);
     doc.text(`WhatsApp: ${app.phone}`, 14, startY + 6);
     doc.text(`Vehículo: ${app.vehicle_info || app.vehicleInfo}`, 14, startY + 12);

@@ -60,7 +60,7 @@ export default function CarReception() {
     doc.setFontSize(20);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Recepciones", headerX, headerY + 8);
+    doc.text("Historial de Recepciones", headerX, headerY + 10);
     
     const data = receptions.map(s => [
       s.date || 'N/A',
@@ -71,7 +71,7 @@ export default function CarReception() {
     ]);
     
     doc.autoTable({
-      startY: Math.max(headerY + 20, 45),
+      startY: Math.max(headerY + 25, 55),
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
       headStyles: { fillColor: config?.button_color || '#000000' }
@@ -187,10 +187,10 @@ export default function CarReception() {
     doc.setFontSize(20);
     doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Recepción de Vehículo", 14, Math.max(headerY + 15, 40));
+    doc.text("Recepción de Vehículo", 14, Math.max(headerY + 20, 50));
     
     doc.setFontSize(10);
-    const startY = Math.max(headerY + 25, 50);
+    const startY = Math.max(headerY + 30, 60);
     doc.text(`Cliente: ${service.client_name || service.clientName}`, 14, startY);
     doc.text(`Vehículo: ${service.vehicle_make || service.vehicleMake} ${service.vehicle_model || service.vehicleModel}`, 14, startY + 6);
     doc.text(`Servicio: ${service.service_type || service.serviceType}`, 14, startY + 12);

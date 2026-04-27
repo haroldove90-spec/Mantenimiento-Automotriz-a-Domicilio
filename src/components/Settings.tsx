@@ -141,20 +141,33 @@ END $$;`;
                 </button>
               </div>
 
-              <div className="flex items-center justify-between">
+              <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre de Aplicación</label>
-                  <p className="text-[9px] text-gray-400 font-medium">Muestra el nombre junto al logotipo.</p>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre de la Aplicación</label>
+                  <input 
+                    type="text"
+                    value={config.app_name}
+                    onChange={e => setConfig({...config, app_name: e.target.value})}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2.5 text-sm mt-1 outline-none focus:ring-1 focus:ring-dark"
+                    placeholder="Ej. Tafer Servicios"
+                  />
                 </div>
-                <button 
-                  onClick={() => setConfig({...config, show_app_name: !config.show_app_name})}
-                  className={`w-10 h-5 rounded-full transition-all relative ${config.show_app_name ? 'bg-dark' : 'bg-gray-200'}`}
-                >
-                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.show_app_name ? 'left-5.5' : 'left-0.5'}`} />
-                </button>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div>
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Mostrar Nombre</label>
+                    <p className="text-[9px] text-gray-400 font-medium">Muestra el nombre junto al logotipo.</p>
+                  </div>
+                  <button 
+                    onClick={() => setConfig({...config, show_app_name: !config.show_app_name})}
+                    className={`w-10 h-5 rounded-full transition-all relative ${config.show_app_name ? 'bg-dark' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow-sm ${config.show_app_name ? 'left-5.5' : 'left-0.5'}`} />
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-3 pt-2 border-t border-gray-50">
+              <div className="space-y-3 pt-4 border-t border-gray-50">
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Tamaño del Logo</label>

@@ -112,7 +112,7 @@ export default function App() {
                style={{ height: config?.logo_size ? Math.min(config.logo_size, 40) : 32, width: 'auto' }}
              />
           {config?.show_app_name !== false && config?.show_app_name !== 'false' && (
-            <span className="font-black text-xs tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+            <span className="font-black text-xs tracking-tighter uppercase">{config?.app_name || "TAFER SERVICIOS"}</span>
           )}
         </div>
         <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-gray-50 rounded-lg">
@@ -235,7 +235,7 @@ function SidebarContent({ activeTab, setActiveTab, user, handleLogout, onClose, 
             style={{ height: config?.logo_size || 40, width: 'auto' }}
           />
           {config?.show_app_name !== false && config?.show_app_name !== 'false' && (
-            <span className="font-black text-xl tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+            <span className="font-black text-xl tracking-tighter uppercase">{config?.app_name || "TAFER SERVICIOS"}</span>
           )}
         </div>
         {onClose && (
