@@ -4,12 +4,14 @@ import { mockDb } from '../lib/mockData';
 
 export default function Settings() {
   const [loading, setLoading] = useState(false);
-  const [config, setConfig] = useState({
+  const [config, setConfig] = useState<any>({
     app_name: 'Tafer Servicios',
     logo_url: 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png',
     nav_color: '#000000',
     button_color: '#000000',
-    link_color: '#2563eb'
+    link_color: '#2563eb',
+    logo_size: 40,
+    show_app_name: true
   });
 
   useEffect(() => {
@@ -85,13 +87,31 @@ export default function Settings() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase">O pega la URL del Logo</label>
+            <div className="space-y-2 pt-2 border-t border-gray-50">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-gray-400 uppercase">Mostrar Nombre de la App</label>
+                <button 
+                  onClick={() => setConfig({...config, show_app_name: !config.show_app_name})}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${config.show_app_name ? 'bg-dark' : 'bg-gray-200'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${config.show_app_name ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-2 border-t border-gray-50">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-gray-400 uppercase">Tamaño del Logo (px)</label>
+                <span className="text-xs font-bold text-gray-400">{config.logo_size}px</span>
+              </div>
               <input 
-                value={config.logo_url}
-                onChange={e => setConfig({...config, logo_url: e.target.value})}
-                className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm outline-none focus:ring-1 focus:ring-dark"
-                placeholder="https://..."
+                type="range" 
+                min="20" 
+                max="120" 
+                step="5"
+                value={config.logo_size}
+                onChange={e => setConfig({...config, logo_size: parseInt(e.target.value)})}
+                className="w-full accent-dark h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer"
               />
             </div>
           </div>

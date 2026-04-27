@@ -102,9 +102,12 @@ export default function App() {
            <img 
                src={config?.logo_url || "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png"} 
                alt="Logo" 
-               className="w-8 h-8 object-contain" 
+               className="object-contain" 
+               style={{ height: config?.logo_size ? Math.min(config.logo_size, 40) : 32, width: 'auto' }}
              />
-          <span className="font-black text-xs tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+          {config?.show_app_name !== false && (
+            <span className="font-black text-xs tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+          )}
         </div>
         <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:bg-gray-50 rounded-lg">
           <Menu className="w-5 h-5 text-gray-400" />
@@ -222,9 +225,12 @@ function SidebarContent({ activeTab, setActiveTab, user, handleLogout, onClose, 
           <img 
             src={config?.logo_url || "https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png"} 
             alt="Logo" 
-            className="w-10 h-10 object-contain" 
+            className="object-contain" 
+            style={{ height: config?.logo_size || 40, width: 'auto' }}
           />
-          <span className="font-black text-xl tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+          {config?.show_app_name !== false && (
+            <span className="font-black text-xl tracking-tighter uppercase">{config?.app_name || "TAFER"}</span>
+          )}
         </div>
         {onClose && (
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg">

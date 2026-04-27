@@ -99,12 +99,25 @@ CREATE TABLE IF NOT EXISTS settings (
   logo_url TEXT DEFAULT 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png',
   nav_color TEXT DEFAULT '#000000',
   button_color TEXT DEFAULT '#000000',
-  link_color TEXT DEFAULT '#2563eb'
+  link_color TEXT DEFAULT '#2563eb',
+  logo_size INTEGER DEFAULT 40,
+  show_app_name BOOLEAN DEFAULT true
 );
 
+-- MIGRACIÓN: Asegurar columnas nuevas en settings
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='logo_size') THEN
+        ALTER TABLE settings ADD COLUMN logo_size INTEGER DEFAULT 40;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='show_app_name') THEN
+        ALTER TABLE settings ADD COLUMN show_app_name BOOLEAN DEFAULT true;
+    END IF;
+END $$;
+
 -- Insertar configuración inicial si no existe
-INSERT INTO settings (id, app_name, logo_url, nav_color, button_color, link_color) 
-VALUES ('00000000-0000-0000-0000-000000000000', 'Tafer Servicios', 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png', '#000000', '#000000', '#2563eb')
+INSERT INTO settings (id, app_name, logo_url, nav_color, button_color, link_color, logo_size, show_app_name) 
+VALUES ('00000000-0000-0000-0000-000000000000', 'Tafer Servicios', 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png', '#000000', '#000000', '#2563eb', 40, true)
 ON CONFLICT (id) DO NOTHING;
 
 -- 7. HABILITAR ACCESO PÚBLICO (Políticas RLS)
