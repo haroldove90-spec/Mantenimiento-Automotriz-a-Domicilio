@@ -22,6 +22,17 @@ export default function Settings() {
     fetch();
   }, []);
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setConfig({ ...config, logo_url: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -59,18 +70,29 @@ export default function Settings() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase">URL del Logo (PNG/JPG)</label>
-              <div className="flex gap-2">
-                <input 
-                  value={config.logo_url}
-                  onChange={e => setConfig({...config, logo_url: e.target.value})}
-                  className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm outline-none focus:ring-1 focus:ring-dark"
-                  placeholder="https://..."
-                />
+              <label className="text-xs font-bold text-gray-400 uppercase">Logo de la Empresa</label>
+              <div className="flex gap-4 items-center">
+                <div className="w-20 h-20 bg-gray-50 rounded-xl flex items-center justify-center border border-dashed border-gray-200 overflow-hidden shrink-0">
+                  <img src={config.logo_url} alt="Logo" className="w-full h-full object-contain" onError={(e: any) => e.target.src = 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png'} />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <p className="text-[10px] text-gray-400 font-medium">Sube una imagen cuadrada (PNG/JPG) con fondo transparente preferiblemente.</p>
+                   <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-100 rounded-lg text-xs font-bold hover:bg-gray-100 cursor-pointer transition-colors text-dark">
+                    <Upload className="w-3 h-3" /> Seleccionar Imagen
+                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                  </label>
+                </div>
               </div>
-              <div className="mt-2 p-4 bg-gray-50 rounded-lg flex items-center justify-center border border-dashed border-gray-200">
-                <img src={config.logo_url} alt="Logo" className="h-16 object-contain" onError={(e: any) => e.target.src = 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png'} />
-              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-gray-400 uppercase">O pega la URL del Logo</label>
+              <input 
+                value={config.logo_url}
+                onChange={e => setConfig({...config, logo_url: e.target.value})}
+                className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm outline-none focus:ring-1 focus:ring-dark"
+                placeholder="https://..."
+              />
             </div>
           </div>
         </div>

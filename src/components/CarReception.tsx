@@ -409,7 +409,7 @@ export default function CarReception() {
                                 <Download className="w-4 h-4" />
                               </button>
                              <button 
-                                onClick={async () => { if(confirm("¿Borrar?")) { await mockDb.delete('receptions', s.id); const data = await mockDb.get('receptions'); setServices(data); } }}
+                                onClick={async () => { if(confirm("¿Borrar?")) { await mockDb.delete('receptions', s.id); const data = await mockDb.get('receptions'); setReceptions(data); } }}
                                 className="p-2 text-dark hover:text-red-500 transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
