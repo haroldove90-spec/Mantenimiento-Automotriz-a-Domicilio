@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   Clock, 
@@ -11,14 +11,63 @@ import {
   Plus
 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { mockDb } from '../lib/mockData';
+import { format, isSameDay } from 'date-fns';
 
 export default function Dashboard() {
-  const stats = [
-    { label: 'Citas Hoy', value: '12', trend: '+2 programadas', trendColor: 'text-green-500' },
-    { label: 'Presupuestos', value: '$4,250', trend: '5 pendientes', trendColor: 'text-gray-500' },
-    { label: 'WhatsApp', value: '48', trend: 'Todos enviados', trendColor: 'text-blue-500' },
-    { label: 'Completados', value: '156', trend: 'Este mes', trendColor: 'text-gray-500' },
-  ];
+  const [stats, setStats] = useState([
+    { label: 'Citas Hoy', value: '0', trend: 'Cargando...', trendColor: 'text-gray-400' },
+    { label: 'Presupuestos', value: '$0', trend: '0 pendientes', trendColor: 'text-gray-500' },
+    { label: 'WhatsApp', value: '0', trend: 'Reporte diario', trendColor: 'text-blue-500' },
+    { label: 'Completados', value: '0', trend: 'Este mes', trendColor: 'text-gray-500' },
+  ]);
+  const [todayAppointments, setTodayAppointments] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const appointments = await mockDb.get('appointments');
+      const quotes = await mockDb.get('quotes');
+      const services = await mockDb.get('services');
+      const receptions = await mockDb.get('receptions');
+
+      const today = new Date();
+      const appointmentsToday = appointments.filter((a: any) => a.date && isSameDay(new Date(a.date), today));
+      setTodayAppointments(appointmentsToday);
+
+      const totalQuotesAmount = quotes.reduce((acc: number, q: any) => acc + (Number(q.total) || 0), 0);
+      const pendingQuotes = quotes.filter((q: any) => q.status === 'sent').length;
+      
+      const completedThisMonth = receptions.filter((r: any) => r.status === 'terminado').length;
+
+      setStats([
+        { 
+          label: 'Citas Hoy', 
+          value: appointmentsToday.length.toString(), 
+          trend: `+${appointmentsToday.filter((a:any) => a.status === 'pendiente').length} pendientes`, 
+          trendColor: 'text-orange-500' 
+        },
+        { 
+          label: 'Presupuestos', 
+          value: `$${totalQuotesAmount.toLocaleString()}`, 
+          trend: `${pendingQuotes} enviados`, 
+          trendColor: 'text-gray-500' 
+        },
+        { 
+          label: 'Servicios', 
+          value: services.length.toString(), 
+          trend: 'Catálogo activo', 
+          trendColor: 'text-blue-500' 
+        },
+        { 
+          label: 'Completados', 
+          value: completedThisMonth.toString(), 
+          trend: 'Acumulado histórico', 
+          trendColor: 'text-green-500' 
+        },
+      ]);
+    };
+    fetchStats();
+  }, []);
 
   return (
     <div className="p-0 grid grid-cols-12 gap-6">
@@ -46,33 +95,24 @@ export default function Dashboard() {
           <button className="text-[10px] bg-dark text-white font-bold uppercase tracking-widest px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-all">Ver Calendario</button>
         </div>
         <div className="divide-y divide-gray-50 font-sans">
-          <ServiceRow 
-            time="09:00"
-            client="Carlos Mendoza"
-            vehicle="Audi A3"
-            service="Cambio de aceite y filtros"
-            address="Av. Reforma 12"
-            status="WA ENVIADO"
-            statusColor="bg-green-100 text-green-700"
-          />
-          <ServiceRow 
-            time="11:30"
-            client="Lucia Ferreyra"
-            vehicle="Mazda CX-5"
-            service="Revisión de frenos"
-            address="Calle 50 No. 23"
-            status="PENDIENTE"
-            statusColor="bg-blue-100 text-blue-700"
-          />
-          <ServiceRow 
-            time="14:00"
-            client="Roberto Silva"
-            vehicle="Toyota Hilux"
-            service="Escaneo de motor"
-            address="Parque Industrial"
-            status="PROGRAMADO"
-            statusColor="bg-gray-100 text-gray-500"
-          />
+          {todayAppointments.length > 0 ? (
+            todayAppointments.map((app, i) => (
+              <ServiceRow 
+                key={app.id || i}
+                time={app.time || '00:00'}
+                client={app.client_name || app.clientName}
+                vehicle={app.vehicle_info || app.vehicleInfo}
+                service={app.service_type || app.serviceType}
+                address={app.address}
+                status={app.status?.toUpperCase() || 'PENDIENTE'}
+                statusColor={app.status === 'completado' ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-700"}
+              />
+            ))
+          ) : (
+            <div className="p-10 text-center text-gray-400 text-sm italic">
+              No hay citas programadas para hoy.
+            </div>
+          )}
         </div>
       </div>
 

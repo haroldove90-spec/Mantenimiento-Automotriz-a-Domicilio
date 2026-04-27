@@ -36,7 +36,7 @@ export default function ServiceCatalog() {
       const data = {
         name: formData.name,
         description: formData.description,
-        base_price: parseFloat(formData.basePrice as string),
+        base_price: Number(formData.basePrice) || 0,
         estimated_duration: formData.estimatedDuration,
         category: formData.category
       };
