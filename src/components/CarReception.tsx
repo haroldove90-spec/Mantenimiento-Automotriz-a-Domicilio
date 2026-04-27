@@ -7,7 +7,8 @@ import autoTable from 'jspdf-autotable';
 import { loadLogoToDoc } from '../lib/pdfUtils';
 
 export default function CarReception() {
-  const [view, setView] = useState<'list' | 'form'>('list');
+  const [view, setView] = useState<'list' | 'form' | 'details'>('list');
+  const [selectedReception, setSelectedReception] = useState<any>(null);
   const [receptions, setReceptions] = useState<any[]>([]);
   const [catalogServices, setCatalogServices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -113,8 +114,8 @@ export default function CarReception() {
         canvasRef.current.height = videoRef.current.videoHeight;
         context.drawImage(videoRef.current, 0, 0);
         const data = canvasRef.current.toDataURL('image/jpeg');
-        setFormData({ ...formData, photos: [...formData.photos, data] });
-        stopCamera();
+        setFormData(prev => ({ ...prev, photos: [...prev.photos, data].slice(0, 8) }));
+        // Do not stop camera, allow multiple
       }
     }
   };
@@ -209,6 +210,14 @@ export default function CarReception() {
     }
     
     doc.save(`Recepcion_${service.client_name || service.clientName}_${service.date}.pdf`);
+  };
+
+  const handleViewDetails = (reception: any) => {
+    setSelectedReception(reception);
+    // We can use a separate view state or just a modal. The user said "activa la funcion para ver detalles", 
+    // usually in this app's style that means a detailed view or modal.
+    // I'll implement a details view similar to how other parts of the app might work or a modal.
+    // Let's go with a modal overlay for "details".
   };
 
   return (
@@ -326,31 +335,67 @@ export default function CarReception() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase">Evidencia Fotográfica ({formData.photos.length})</label>
-                  <button 
-                    type="button"
-                    onClick={startCamera}
-                    className="text-primary text-xs font-bold flex items-center gap-1 hover:underline"
-                  >
-                    <Plus className="w-3 h-3" /> Tomar Foto
-                  </button>
+                <div className="flex justify-between items-center bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                  <div>
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">Evidencia Fotográfica</label>
+                    <p className="text-[9px] text-gray-400 font-medium">Sube fotos o toma una con la cámara ({formData.photos.length} de 8)</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <label className="cursor-pointer bg-white border border-gray-200 p-2.5 rounded-xl hover:bg-gray-50 transition-all shadow-sm">
+                      <ImageIcon className="w-5 h-5 text-gray-600" />
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          files.forEach(file => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              const base64 = reader.result as string;
+                              setFormData(prev => ({
+                                ...prev,
+                                photos: [...prev.photos, base64].slice(0, 8)
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                        }}
+                      />
+                    </label>
+                    <button 
+                      type="button"
+                      onClick={startCamera}
+                      className="bg-dark text-white p-2.5 rounded-xl hover:bg-gray-800 transition-all shadow-sm flex items-center gap-2 px-4"
+                    >
+                      <Camera className="w-5 h-5" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Cámara</span>
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-2">
-                  {formData.photos.map((p, i) => (
-                    <div key={i} className="aspect-square rounded-lg border border-gray-100 overflow-hidden relative group">
-                      <img src={p} className="w-full h-full object-cover" />
-                      <button 
-                        type="button"
-                        onClick={() => setFormData({...formData, photos: formData.photos.filter((_, idx) => idx !== i)})}
-                        className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                {formData.photos.length > 0 ? (
+                  <div className="grid grid-cols-4 gap-2">
+                    {formData.photos.map((p, i) => (
+                      <div key={i} className="aspect-square rounded-xl border border-gray-100 overflow-hidden relative group shadow-sm bg-gray-50">
+                        <img src={p} className="w-full h-full object-cover" />
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({...formData, photos: formData.photos.filter((_, idx) => idx !== i)})}
+                          className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity backdrop-blur-[1px]"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-100 rounded-2xl py-8 flex flex-col items-center justify-center text-gray-300">
+                    <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                    <p className="text-[10px] font-bold uppercase tracking-widest">Sin fotos seleccionadas</p>
+                  </div>
+                )}
               </div>
 
               <button 
@@ -381,7 +426,7 @@ export default function CarReception() {
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                       {receptions.map((s) => (
-                        <tr key={s.id} className="hover:bg-gray-50 transition-colors group">
+                        <tr key={s.id} className="hover:bg-gray-50 transition-colors group cursor-pointer" onClick={() => handleViewDetails(s)}>
                           <td className="py-4 px-6 text-sm">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center text-dark font-bold border border-gray-100 group-hover:bg-dark group-hover:text-white transition-all">
@@ -417,7 +462,7 @@ export default function CarReception() {
                           {s.date}
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                              <button 
                                 onClick={() => {
                                   const configAppName = config?.app_name || "TAFER SERVICIOS";
@@ -462,6 +507,130 @@ export default function CarReception() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {selectedReception && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-dark/60 backdrop-blur-sm"
+              onClick={() => setSelectedReception(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <div>
+                  <h3 className="font-bold text-xl text-dark">Detalle de Recepción</h3>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Folio #{selectedReception.id?.slice(-6).toUpperCase()}</p>
+                </div>
+                <button onClick={() => setSelectedReception(null)} className="p-2 hover:bg-white rounded-xl text-gray-400 hover:text-dark transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Información del Cliente</label>
+                      <div className="bg-gray-50 p-4 rounded-2xl flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-dark font-black shadow-sm border border-gray-100">
+                          {selectedReception.client_name ? selectedReception.client_name[0] : (selectedReception.clientName ? selectedReception.clientName[0] : '?')}
+                        </div>
+                        <div>
+                          <p className="font-bold text-dark">{selectedReception.client_name || selectedReception.clientName}</p>
+                          <p className="text-xs text-gray-400 font-medium">{selectedReception.phone || 'Teléfono no registrado'}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-2">Vehículo y Servicio</label>
+                      <div className="bg-gray-50 p-4 rounded-2xl space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-400 font-medium">Auto:</span>
+                          <span className="font-bold text-dark">{selectedReception.vehicle_make || selectedReception.vehicleMake} {selectedReception.vehicle_model || selectedReception.vehicleModel}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-400 font-medium">Servicio:</span>
+                          <span className="font-bold text-primary bg-blue-50 px-2 py-0.5 rounded text-[11px] uppercase tracking-wider">{selectedReception.service_type || selectedReception.serviceType}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-400 font-medium">Fecha:</span>
+                          <span className="font-bold text-dark">{selectedReception.date}</span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-400 font-medium">Estado:</span>
+                          <span className={`font-bold px-3 py-1 rounded-full text-[10px] uppercase tracking-widest ${
+                            selectedReception.status === 'en proceso' ? 'bg-blue-100 text-blue-600' :
+                            selectedReception.status === 'terminado' ? 'bg-green-100 text-green-600' :
+                            'bg-red-100 text-red-600'
+                          }`}>
+                            {selectedReception.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Evidencias Fotográficas ({selectedReception.photos?.length || 0})</label>
+                    {selectedReception.photos && selectedReception.photos.length > 0 ? (
+                      <div className="grid grid-cols-2 gap-3">
+                        {selectedReception.photos.map((photo: string, idx: number) => (
+                          <div key={idx} className="aspect-square rounded-2xl overflow-hidden border border-gray-100 shadow-sm group relative">
+                            <img src={photo} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-dark/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button 
+                                onClick={() => window.open(photo, '_blank')}
+                                className="bg-white/90 backdrop-blur-sm p-2 rounded-xl text-dark"
+                              >
+                                <Search className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl py-12 flex flex-col items-center justify-center text-gray-400">
+                        <ImageIcon className="w-12 h-12 mb-3 opacity-20" />
+                        <p className="text-[10px] font-bold uppercase tracking-widest">Sin fotos registradas</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-4">
+                <button 
+                  onClick={() => exportPDF(selectedReception)}
+                  className="flex-1 bg-white border border-gray-200 text-dark py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 transition-all shadow-sm"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>DESCARGAR COMPROBANTE PDF</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    const configAppName = config?.app_name || "TAFER SERVICIOS";
+                    const msg = `🛠️ *${configAppName}*\n\n*DETALLE DE RECEPCIÓN*\n\nHola *${selectedReception.client_name || selectedReception.clientName}*, aquí están los detalles de tu vehículo *${selectedReception.vehicle_make || ''} ${selectedReception.vehicle_model || ''}*:\n\n📅 *Fecha:* ${selectedReception.date}\n🔧 *Servicio:* ${selectedReception.service_type || ''}\n✅ *Estatus:* ${selectedReception.status}\n\nGracias por tu confianza.`;
+                    window.open(`https://wa.me/${(selectedReception.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                  }}
+                  className="flex-1 bg-dark text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-800 transition-all shadow-lg"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>NOTIFICAR POR WHATSAPP</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isCapturing && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -472,22 +641,38 @@ export default function CarReception() {
             <video ref={videoRef} autoPlay playsInline className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl border border-white/10" />
             <canvas ref={canvasRef} className="hidden" />
             
-            <div className="flex gap-8 mt-10">
+            <div className="flex gap-8 mt-10 items-center">
               <button 
                 onClick={stopCamera}
                 className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 hover:bg-white/20"
+                title="Cancelar"
               >
                 <Trash2 className="w-5 h-5" />
               </button>
+              
+              <div className="relative">
+                <button 
+                  onClick={takePhoto}
+                  className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                >
+                  <div className="w-16 h-16 rounded-full border-2 border-dark flex items-center justify-center">
+                    <div className="w-12 h-12 bg-dark rounded-full shadow-inner" />
+                  </div>
+                </button>
+                {formData.photos.length > 0 && (
+                  <div className="absolute -top-2 -right-2 bg-primary text-dark w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-dark shadow-lg">
+                    {formData.photos.length}
+                  </div>
+                )}
+              </div>
+
               <button 
-                onClick={takePhoto}
-                className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-2xl active:scale-95 transition-transform"
+                onClick={stopCamera}
+                className="bg-green-500 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
               >
-                <div className="w-16 h-16 rounded-full border-2 border-dark flex items-center justify-center">
-                  <div className="w-12 h-12 bg-dark rounded-full shadow-inner" />
-                </div>
+                <CheckCircle className="w-5 h-5" />
+                <span>LISTO</span>
               </button>
-              <div className="w-14" />
             </div>
           </motion.div>
         )}
