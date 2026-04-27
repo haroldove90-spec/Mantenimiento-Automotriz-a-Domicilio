@@ -168,7 +168,7 @@ export default function Quotes() {
     doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, 30);
     doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, 36);
     doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, 42);
-    doc.text(`Fecha: ${quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}`, 14, 48);
+    doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, 48);
 
     doc.autoTable({
       startY: 55,
@@ -196,7 +196,7 @@ export default function Quotes() {
       startY: 30,
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
       body: quotes.map(q => [
-        q.createdAt ? new Date(q.createdAt).toLocaleDateString() : 'N/A',
+        q.createdAt ? (q.createdAt.toDate ? q.createdAt.toDate().toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : 'N/A',
         q.client_name || q.clientName,
         `${q.vehicle_make || q.vehicleMake} ${q.vehicle_model || q.vehicleModel}`,
         q.service_type || q.serviceType,
@@ -460,7 +460,7 @@ export default function Quotes() {
                     <p className="text-sm font-bold text-dark font-mono">${(quote.total || 0).toLocaleString()} MXN</p>
                   </td>
                   <td className="py-4 px-6 text-xs text-gray-400 font-bold uppercase">
-                    {quote.createdAt ? new Date(quote.createdAt).toLocaleDateString() : 'N/A'}
+                    {quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex justify-end gap-2">

@@ -15,7 +15,7 @@ export const mockDb = {
       
       return data.map(item => ({
         ...item,
-        createdAt: { toDate: () => new Date(item.created_at) }
+        createdAt: item.created_at
       }));
     } catch (e) {
       console.error(`Fatal error fetching ${collection}:`, e);
@@ -42,7 +42,7 @@ export const mockDb = {
       }
       return {
         ...inserted,
-        createdAt: { toDate: () => new Date(inserted.created_at) }
+        createdAt: inserted.created_at
       };
     } catch (e: any) {
       console.error(`Fatal error adding to ${collection}:`, e);
@@ -102,7 +102,7 @@ export const mockDb = {
       }
       return data.map(item => ({
         ...item,
-        createdAt: { toDate: () => new Date(item.created_at) }
+        createdAt: item.created_at
       }));
     } catch (e) {
       console.error(`Fatal error querying ${collection}:`, e);

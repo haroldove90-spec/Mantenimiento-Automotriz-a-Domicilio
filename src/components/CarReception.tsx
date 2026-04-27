@@ -6,7 +6,8 @@ import { jsPDF } from 'jspdf';
 
 export default function CarReception() {
   const [view, setView] = useState<'list' | 'form'>('list');
-  const [services, setServices] = useState<any[]>([]);
+  const [receptions, setReceptions] = useState<any[]>([]);
+  const [catalogServices, setCatalogServices] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
@@ -28,10 +29,12 @@ export default function CarReception() {
 
   useEffect(() => {
     const fetch = async () => {
-      const receptions = await mockDb.get('receptions');
+      const data = await mockDb.get('receptions');
       const clientsList = await mockDb.get('clients');
-      setServices(receptions || []);
+      const catalog = await mockDb.get('services');
+      setReceptions(data || []);
       setClients(clientsList || []);
+      setCatalogServices(catalog || []);
     };
     fetch();
   }, []);
@@ -41,7 +44,7 @@ export default function CarReception() {
     doc.setFontSize(20);
     doc.text("Historial de Recepciones - Tafer Servicios", 14, 22);
     
-    const data = services.map(s => [
+    const data = receptions.map(s => [
       s.date || 'N/A',
       s.client_name || s.clientName || 'N/A',
       `${s.vehicle_make || s.vehicleMake} ${s.vehicle_model || s.vehicleModel}`,
@@ -119,7 +122,7 @@ export default function CarReception() {
       };
       await mockDb.add('receptions', newService);
       const data = await mockDb.get('receptions');
-      setServices(data);
+      setReceptions(data);
       setView('list');
       resetForm();
     } catch (error) {
@@ -145,7 +148,7 @@ export default function CarReception() {
   const updateStatus = async (id: string, newStatus: string) => {
     await mockDb.update('receptions', id, { status: newStatus });
     const data = await mockDb.get('receptions');
-    setServices(data);
+    setReceptions(data);
   };
 
   const exportPDF = (service: any) => {
@@ -262,12 +265,18 @@ export default function CarReception() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Tipo de Servicio</label>
-                  <input 
+                  <select 
                     required
                     value={formData.serviceType}
                     onChange={e => setFormData({...formData, serviceType: e.target.value})}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm"
-                  />
+                    className="w-full bg-gray-50 border border-gray-100 rounded-lg py-2.5 px-4 text-sm focus:ring-1 focus:ring-dark outline-none"
+                  >
+                    <option value="">Selecciona servicio...</option>
+                    {catalogServices.map(s => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
+                    <option value="Otro">Otro (especificar en notas)</option>
+                  </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-gray-400 uppercase">Fecha</label>
@@ -336,7 +345,7 @@ export default function CarReception() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                      {services.map((s) => (
+                      {receptions.map((s) => (
                         <tr key={s.id} className="hover:bg-gray-50 transition-colors group">
                           <td className="py-4 px-6 text-sm">
                             <div className="flex items-center gap-3">
@@ -391,7 +400,7 @@ export default function CarReception() {
                         </td>
                       </tr>
                     ))}
-                    {services.length === 0 && (
+                    {receptions.length === 0 && (
                       <tr>
                         <td colSpan={5} className="py-20 text-center">
                           <Car className="w-12 h-12 text-gray-100 mx-auto mb-4" />
