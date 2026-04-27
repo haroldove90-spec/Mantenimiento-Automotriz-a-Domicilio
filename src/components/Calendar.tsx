@@ -152,14 +152,21 @@ export default function AppointmentCalendar() {
   const exportAllToPDF = async () => {
     const doc = new jsPDF() as any;
     
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
     
     doc.setFontSize(20);
-    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Citas", 40, 28);
+    doc.text("Historial de Citas", headerX, headerY + 8);
     
     const data = appointments.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(a => [
       a.date || 'N/A',
@@ -171,7 +178,7 @@ export default function AppointmentCalendar() {
     ]);
     
     doc.autoTable({
-      startY: 40,
+      startY: Math.max(headerY + 20, 45),
       head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
       headStyles: { fillColor: config?.button_color || '#000000' }
@@ -193,21 +200,29 @@ export default function AppointmentCalendar() {
 
   const exportSingleToPDF = async (app: any) => {
     const doc = new jsPDF() as any;
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
     doc.setFontSize(18);
-    doc.text(config?.app_name || "Tafer Servicios", 35, 20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Comprobante de Cita", 14, 35);
+    doc.text("Comprobante de Cita", 14, Math.max(headerY + 15, 40));
     doc.setFontSize(10);
-    doc.text(`Cliente: ${app.client_name || app.clientName}`, 14, 45);
-    doc.text(`WhatsApp: ${app.phone}`, 14, 51);
-    doc.text(`Vehículo: ${app.vehicle_info || app.vehicleInfo}`, 14, 57);
-    doc.text(`Servicio: ${app.service_type || app.serviceType}`, 14, 63);
-    doc.text(`Fecha: ${app.date}`, 14, 69);
-    doc.text(`Hora: ${app.time}`, 14, 75);
-    doc.text(`Notas: ${app.notes || 'N/A'}`, 14, 81);
+    const startY = Math.max(headerY + 25, 50);
+    doc.text(`Cliente: ${app.client_name || app.clientName}`, 14, startY);
+    doc.text(`WhatsApp: ${app.phone}`, 14, startY + 6);
+    doc.text(`Vehículo: ${app.vehicle_info || app.vehicleInfo}`, 14, startY + 12);
+    doc.text(`Servicio: ${app.service_type || app.serviceType}`, 14, startY + 18);
+    doc.text(`Fecha: ${app.date}`, 14, startY + 24);
+    doc.text(`Hora: ${app.time}`, 14, startY + 30);
+    doc.text(`Notas: ${app.notes || 'N/A'}`, 14, startY + 36);
     doc.save(`Cita_${app.client_name || app.clientName}.pdf`);
   };
 

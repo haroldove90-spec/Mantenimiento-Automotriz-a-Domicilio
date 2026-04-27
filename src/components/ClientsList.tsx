@@ -113,19 +113,32 @@ export default function ClientsList() {
     const settings = await mockDb.get('settings');
     const config = settings?.[0];
     
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
-    doc.text("Historial de Cliente", 14, 22);
+    
+    doc.setFontSize(20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
+    doc.setFontSize(14);
+    doc.text("Historial de Cliente", 14, Math.max(headerY + 15, 40));
     
     doc.setFontSize(10);
-    doc.text(`Cliente: ${selectedClient.name}`, 14, 32);
-    doc.text(`Teléfono: ${selectedClient.phone}`, 14, 38);
-    doc.text(`Dirección: ${selectedClient.address || 'N/A'}`, 14, 44);
-    doc.text(`Vehículo: ${selectedClient.vehicle_make || selectedClient.vehicleMake} ${selectedClient.vehicle_model || selectedClient.vehicleModel}`, 14, 50);
+    const startY = Math.max(headerY + 25, 50);
+    doc.text(`Cliente: ${selectedClient.name}`, 14, startY);
+    doc.text(`Teléfono: ${selectedClient.phone}`, 14, startY + 6);
+    doc.text(`Dirección: ${selectedClient.address || 'N/A'}`, 14, startY + 12);
+    doc.text(`Vehículo: ${selectedClient.vehicle_make || selectedClient.vehicleMake} ${selectedClient.vehicle_model || selectedClient.vehicleModel}`, 14, startY + 18);
     
+    const tableStartY = startY + 30;
     doc.setFontSize(14);
-    doc.text("Presupuestos", 14, 65);
+    doc.text("Presupuestos", 14, tableStartY);
     
     const quoteData = history.quotes.map(q => [
       q.createdAt?.toDate ? q.createdAt.toDate().toLocaleDateString() : 'N/A',
@@ -135,7 +148,7 @@ export default function ClientsList() {
     ]);
     
     doc.autoTable({
-      startY: 70,
+      startY: tableStartY + 5,
       head: [['Fecha', 'Servicio', 'Total', 'Estado']],
       body: quoteData,
     });

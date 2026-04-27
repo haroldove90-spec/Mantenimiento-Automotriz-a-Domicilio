@@ -30,25 +30,6 @@ CREATE TABLE IF NOT EXISTS clients (
   address TEXT
 );
 
--- MIGRACIÓN DE CLIENTES
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='address') THEN
-        ALTER TABLE clients ADD COLUMN address TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='name') THEN
-        ALTER TABLE clients ADD COLUMN name TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_make') THEN
-        ALTER TABLE clients ADD COLUMN vehicle_make TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_model') THEN
-        ALTER TABLE clients ADD COLUMN vehicle_model TEXT;
-    END IF;
-    -- Eliminar la restricción única de teléfono si existe
-    ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_phone_key;
-END $$;
-
 -- 3. Citas de Calendario
 CREATE TABLE IF NOT EXISTS appointments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -63,26 +44,6 @@ CREATE TABLE IF NOT EXISTS appointments (
   status TEXT DEFAULT 'pendiente',
   notes TEXT
 );
-
--- MIGRACIÓN DE CITAS
-DO $$ 
-BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='address') THEN
-        ALTER TABLE appointments ADD COLUMN address TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='client_name') THEN
-        ALTER TABLE appointments ADD COLUMN client_name TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='vehicle_info') THEN
-        ALTER TABLE appointments ADD COLUMN vehicle_info TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='notes') THEN
-        ALTER TABLE appointments ADD COLUMN notes TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='service_type') THEN
-        ALTER TABLE appointments ADD COLUMN service_type TEXT;
-    END IF;
-END $$;
 
 -- 4. Presupuestos (Quotes)
 CREATE TABLE IF NOT EXISTS quotes (
@@ -126,9 +87,43 @@ CREATE TABLE IF NOT EXISTS settings (
   show_app_name BOOLEAN DEFAULT true
 );
 
--- MIGRACIÓN: Asegurar columnas nuevas en settings
+-- REPARACIONES Y MIGRACIONES FORZADAS (Ejecutar siempre en el SQL Editor)
 DO $$ 
 BEGIN 
+    -- 1. Clientes
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='address') THEN
+        ALTER TABLE clients ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_make') THEN
+        ALTER TABLE clients ADD COLUMN vehicle_make TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_model') THEN
+        ALTER TABLE clients ADD COLUMN vehicle_model TEXT;
+    END IF;
+    -- Quitar restricción única de teléfono para permitir múltiples vehículos por número
+    ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_phone_key;
+
+    -- 2. Citas (Asegurar status y notes)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='status') THEN
+        ALTER TABLE appointments ADD COLUMN status TEXT DEFAULT 'pendiente';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='notes') THEN
+        ALTER TABLE appointments ADD COLUMN notes TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='address') THEN
+        ALTER TABLE appointments ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='client_name') THEN
+        ALTER TABLE appointments ADD COLUMN client_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='vehicle_info') THEN
+        ALTER TABLE appointments ADD COLUMN vehicle_info TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='service_type') THEN
+        ALTER TABLE appointments ADD COLUMN service_type TEXT;
+    END IF;
+
+    -- 3. Settings
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='settings' AND column_name='logo_size') THEN
         ALTER TABLE settings ADD COLUMN logo_size INTEGER DEFAULT 40;
     END IF;
@@ -137,47 +132,47 @@ BEGIN
     END IF;
 END $$;
 
--- Insertar configuración inicial si no existe
+-- Insertar configuración inicial
 INSERT INTO settings (id, app_name, logo_url, nav_color, button_color, link_color, logo_size, show_app_name) 
 VALUES ('00000000-0000-0000-0000-000000000000', 'Tafer Servicios', 'https://cdn.pixabay.com/photo/2016/04/01/09/23/car-1299321_1280.png', '#000000', '#000000', '#2563eb', 40, true)
 ON CONFLICT (id) DO NOTHING;
 
--- 7. HABILITAR ACCESO PÚBLICO (Políticas RLS)
--- Nota: Esto habilita lectura/escritura pública para simplificar el demo.
-
+-- HABILITAR RLS Y POLÍTICAS
 DO $$ 
 BEGIN 
-    -- Services
     ALTER TABLE services ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "Public Read Services" ON services;
-    CREATE POLICY "Public Read Services" ON services FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Public Write Services" ON services;
-    CREATE POLICY "Public Write Services" ON services FOR ALL USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Read Services') THEN
+        CREATE POLICY "Public Read Services" ON services FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Write Services') THEN
+        CREATE POLICY "Public Write Services" ON services FOR ALL USING (true);
+    END IF;
 
-    -- Clients
     ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "Public All Clients" ON clients;
-    CREATE POLICY "Public All Clients" ON clients FOR ALL USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public All Clients') THEN
+        CREATE POLICY "Public All Clients" ON clients FOR ALL USING (true);
+    END IF;
 
-    -- Appointments
     ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "Public All Appointments" ON appointments;
-    CREATE POLICY "Public All Appointments" ON appointments FOR ALL USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public All Appointments') THEN
+        CREATE POLICY "Public All Appointments" ON appointments FOR ALL USING (true);
+    END IF;
 
-    -- Quotes
     ALTER TABLE quotes ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "Public All Quotes" ON quotes;
-    CREATE POLICY "Public All Quotes" ON quotes FOR ALL USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public All Quotes') THEN
+        CREATE POLICY "Public All Quotes" ON quotes FOR ALL USING (true);
+    END IF;
 
-    -- Receptions
     ALTER TABLE receptions ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "Public All Receptions" ON receptions;
-    CREATE POLICY "Public All Receptions" ON receptions FOR ALL USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public All Receptions') THEN
+        CREATE POLICY "Public All Receptions" ON receptions FOR ALL USING (true);
+    END IF;
 
-    -- Settings
     ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-    DROP POLICY IF EXISTS "Public Read Settings" ON settings;
-    CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Public Update Settings" ON settings;
-    CREATE POLICY "Public Update Settings" ON settings FOR UPDATE USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Read Settings') THEN
+        CREATE POLICY "Public Read Settings" ON settings FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Update Settings') THEN
+        CREATE POLICY "Public Update Settings" ON settings FOR UPDATE USING (true);
+    END IF;
 END $$;

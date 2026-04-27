@@ -46,14 +46,21 @@ export default function CarReception() {
   const exportAllToPDF = async () => {
     const doc = new jsPDF() as any;
     
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
 
     doc.setFontSize(20);
-    doc.text(config?.app_name || "Tafer Servicios", 42, 22);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Recepciones", 42, 30);
+    doc.text("Historial de Recepciones", headerX, headerY + 8);
     
     const data = receptions.map(s => [
       s.date || 'N/A',
@@ -64,7 +71,7 @@ export default function CarReception() {
     ]);
     
     doc.autoTable({
-      startY: 40,
+      startY: Math.max(headerY + 20, 45),
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
       headStyles: { fillColor: config?.button_color || '#000000' }
@@ -166,25 +173,33 @@ export default function CarReception() {
   const exportPDF = async (service: any) => {
     const doc = new jsPDF() as any;
     
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
 
     doc.setFontSize(20);
-    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Recepción de Vehículo", 14, 40);
+    doc.text("Recepción de Vehículo", 14, Math.max(headerY + 15, 40));
     
     doc.setFontSize(10);
-    doc.text(`Cliente: ${service.client_name || service.clientName}`, 14, 50);
-    doc.text(`Vehículo: ${service.vehicle_make || service.vehicleMake} ${service.vehicle_model || service.vehicleModel}`, 14, 56);
-    doc.text(`Servicio: ${service.service_type || service.serviceType}`, 14, 62);
-    doc.text(`Fecha: ${service.date}`, 14, 68);
-    doc.text(`Estatus: ${service.status}`, 14, 74);
+    const startY = Math.max(headerY + 25, 50);
+    doc.text(`Cliente: ${service.client_name || service.clientName}`, 14, startY);
+    doc.text(`Vehículo: ${service.vehicle_make || service.vehicleMake} ${service.vehicle_model || service.vehicleModel}`, 14, startY + 6);
+    doc.text(`Servicio: ${service.service_type || service.serviceType}`, 14, startY + 12);
+    doc.text(`Fecha: ${service.date}`, 14, startY + 18);
+    doc.text(`Estatus: ${service.status}`, 14, startY + 24);
 
     if (service.photos && service.photos.length > 0) {
-      doc.text("Evidencias:", 14, 85);
-      let y = 90;
+      doc.text("Evidencias:", 14, startY + 35);
+      let y = startY + 40;
       service.photos.forEach((photo: string, index: number) => {
         if (y > 220) { doc.addPage(); y = 20; }
         doc.addImage(photo, 'JPEG', 14, y, 50, 40);

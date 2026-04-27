@@ -167,23 +167,31 @@ export default function Quotes() {
   const exportPDF = async (quote: any) => {
     const doc = new jsPDF() as any;
     
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
 
     doc.setFontSize(20);
-    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Presupuesto de Servicio", 40, 28);
+    doc.text("Presupuesto de Servicio", headerX, headerY + 8);
     
     doc.setFontSize(10);
-    doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, 40);
-    doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, 46);
-    doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, 52);
-    doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, 58);
+    const startY = Math.max(headerY + 20, 40);
+    doc.text(`Cliente: ${quote.client_name || quote.clientName}`, 14, startY);
+    doc.text(`Vehículo: ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}`, 14, startY + 6);
+    doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, startY + 12);
+    doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, startY + 18);
 
     doc.autoTable({
-      startY: 65,
+      startY: startY + 25,
       head: [['Descripción', 'Cant.', 'Precio', 'Subtotal']],
       body: quote.items.map((i: any) => [
         i.description,
@@ -203,17 +211,24 @@ export default function Quotes() {
   const exportAllToPDF = async () => {
     const doc = new jsPDF() as any;
     
+    let headerX = 14;
+    let headerY = 20;
+
     if (config?.logo_url) {
-      await loadLogoToDoc(doc, config.logo_url);
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
     }
 
     doc.setFontSize(20);
-    doc.text(config?.app_name || "Tafer Servicios", 40, 20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
     doc.setFontSize(14);
-    doc.text("Historial de Presupuestos", 40, 28);
+    doc.text("Historial de Presupuestos", headerX, headerY + 8);
     
     doc.autoTable({
-      startY: 40,
+      startY: Math.max(headerY + 20, 40),
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
       body: quotes.map(q => [
         q.createdAt ? (q.createdAt.toDate ? q.createdAt.toDate().toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : 'N/A',

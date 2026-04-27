@@ -97,24 +97,43 @@ export default function Settings() {
                 </p>
                 <button 
                   onClick={() => {
-                    const sql = `-- EJECUTA ESTO EN EL SQL EDITOR DE SUPABASE PARA REPARAR ERRORES:
--- 1. Reparar Tabla Clientes (Quitar restricción de duplicado y agregar columnas)
-ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_phone_key;
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS address TEXT;
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS vehicle_make TEXT;
-ALTER TABLE clients ADD COLUMN IF NOT EXISTS vehicle_model TEXT;
+                    const sql = `-- REPARACIONES Y MIGRACIONES FORZADAS (Ejecutar en el SQL Editor de Supabase)
+DO $$ 
+BEGIN 
+    -- 1. Clientes
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='address') THEN
+        ALTER TABLE clients ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_make') THEN
+        ALTER TABLE clients ADD COLUMN vehicle_make TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_model') THEN
+        ALTER TABLE clients ADD COLUMN vehicle_model TEXT;
+    END IF;
+    ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_phone_key;
 
--- 2. Reparar Tabla Citas (Agregar columnas faltantes)
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS address TEXT;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS notes TEXT;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS service_type TEXT;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS client_name TEXT;
-ALTER TABLE appointments ADD COLUMN IF NOT EXISTS vehicle_info TEXT;
-
--- 3. Actualizar Cache (Opcional pero recomendado)
--- Refresca la pestaña de tu navegador después de ejecutar esto.`;
+    -- 2. Citas (Asegurar status y notes)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='status') THEN
+        ALTER TABLE appointments ADD COLUMN status TEXT DEFAULT 'pendiente';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='notes') THEN
+        ALTER TABLE appointments ADD COLUMN notes TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='address') THEN
+        ALTER TABLE appointments ADD COLUMN address TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='client_name') THEN
+        ALTER TABLE appointments ADD COLUMN client_name TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='vehicle_info') THEN
+        ALTER TABLE appointments ADD COLUMN vehicle_info TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='service_type') THEN
+        ALTER TABLE appointments ADD COLUMN service_type TEXT;
+    END IF;
+END $$;`;
                     navigator.clipboard.writeText(sql);
-                    alert("¡Script SQL copiado! Pégalo en el SQL Editor de Supabase y ejecútalo.");
+                    alert("¡Script SQL copiado! Pégalo en el SQL Editor de Supabase, ejecútalo y luego REFRESCA esta página.");
                   }}
                   className="w-full bg-amber-100 text-amber-700 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-amber-200 transition-colors"
                 >
