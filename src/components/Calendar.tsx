@@ -17,8 +17,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { formatWhatsAppLink, getAppointmentReminder } from '../lib/utils';
 import { mockDb } from '../lib/mockData';
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { loadLogoToDoc } from '../lib/pdfUtils';
-import 'jspdf-autotable';
 
 export default function AppointmentCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -102,7 +102,9 @@ export default function AppointmentCalendar() {
         formData.clientName,
         formData.date,
         timeString,
-        formData.serviceType
+        formData.serviceType,
+        `${formData.make} ${formData.model}`,
+        formData.address
       );
       
       const waLink = formatWhatsAppLink(formData.phone, whatsappMsg);
@@ -177,7 +179,7 @@ export default function AppointmentCalendar() {
       a.status || 'pendiente'
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: Math.max(headerY + 25, 55),
       head: [['Fecha', 'Hora', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
@@ -192,7 +194,9 @@ export default function AppointmentCalendar() {
       app.client_name || app.clientName,
       app.date,
       app.time,
-      app.service_type || app.serviceType
+      app.service_type || app.serviceType,
+      app.vehicle_info || app.vehicleInfo,
+      app.address
     );
     const waLink = formatWhatsAppLink(app.phone, whatsappMsg);
     window.open(waLink, '_blank');

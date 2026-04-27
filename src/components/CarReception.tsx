@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Camera, Plus, Trash2, CheckCircle, Clock, X, User as UserIcon, Car, MapPin, Search, Download, FileText, ImageIcon, ChevronRight } from 'lucide-react';
+import { Camera, Plus, Trash2, CheckCircle, Clock, X, User as UserIcon, Car, MapPin, Search, Download, FileText, ImageIcon, ChevronRight, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { mockDb } from '../lib/mockData';
 import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { loadLogoToDoc } from '../lib/pdfUtils';
 
 export default function CarReception() {
@@ -65,12 +66,12 @@ export default function CarReception() {
     const data = receptions.map(s => [
       s.date || 'N/A',
       s.client_name || s.clientName || 'N/A',
-      `${s.vehicle_make || s.vehicleMake} ${s.vehicle_model || s.vehicleModel}`,
-      s.service_type || s.serviceType || 'N/A',
+      `${s.vehicle_make || s.vehicleMake || ''} ${s.vehicle_model || s.vehicleModel || ''}`,
+      s.service_type || s.serviceType || 'Varios',
       s.status || 'en proceso'
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: Math.max(headerY + 25, 55),
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Estado']],
       body: data,
@@ -417,6 +418,17 @@ export default function CarReception() {
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="flex justify-end gap-2">
+                             <button 
+                                onClick={() => {
+                                  const configAppName = config?.app_name || "TAFER SERVICIOS";
+                                  const msg = `🛠️ *${configAppName}*\n\n*COMPROBANTE DE RECEPCIÓN*\n\nHola *${s.client_name || s.clientName}*, te confirmamos la recepción de tu vehículo *${s.vehicle_make || ''} ${s.vehicle_model || ''}* para el servicio de *${s.service_type || ''}*.\n\n📅 *Fecha:* ${s.date}\n✅ *Estado:* ${s.status}\n\nGracias por tu confianza.`;
+                                  window.open(`https://wa.me/${(s.phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`, '_blank');
+                                }}
+                                className="p-2 text-dark hover:text-green-600 transition-colors"
+                                title="Enviar por WhatsApp"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                              </button>
                              <button 
                                 onClick={() => exportPDF(s)}
                                 className="p-2 text-dark hover:text-primary transition-colors"

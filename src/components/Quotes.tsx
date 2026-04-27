@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { geminiService } from '../services/geminiService';
 import { formatWhatsAppLink } from '../lib/utils';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { mockDb } from '../lib/mockData';
 import { loadLogoToDoc } from '../lib/pdfUtils';
 
@@ -156,9 +156,13 @@ export default function Quotes() {
   };
 
   const handleResend = (quote: any) => {
-    const message = `*Re-envío de Presupuesto*\n\nHola ${quote.client_name || quote.clientName}, te recordamos el presupuesto para tu ${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}:\n\n` + 
-      quote.items.map((i: any) => `- ${i.description}: $${Number(i.price).toLocaleString()} x ${i.quantity}`).join('\n') + 
-      `\n\n*TOTAL: $${quote.total?.toLocaleString()} MXN*\n\n¿Deseas agendar el servicio?`;
+    const message = `🛠️ *${config?.app_name || "TAFER SERVICIOS"}*\n\n` +
+      `*RECORDATORIO DE PRESUPUESTO*\n\n` +
+      `Hola *${quote.client_name || quote.clientName}*,\n` +
+      `Te recordamos el presupuesto para tu *${quote.vehicle_make || quote.vehicleMake} ${quote.vehicle_model || quote.vehicleModel}*:\n\n` + 
+      quote.items.map((i: any) => `• ${i.description}: $${Number(i.price).toLocaleString()} x ${i.quantity}`).join('\n') + 
+      `\n\n*TOTAL: $${quote.total?.toLocaleString()} MXN*\n\n` +
+      `¿Deseas confirmar este servicio? Quedamos a la espera de tu respuesta. ✨`;
     
     const waLink = formatWhatsAppLink(quote.phone, message);
     window.open(waLink, '_blank');
@@ -190,7 +194,7 @@ export default function Quotes() {
     doc.text(`Servicio: ${quote.service_type || quote.serviceType}`, 14, startY + 12);
     doc.text(`Fecha: ${quote.createdAt ? (quote.createdAt.toDate ? quote.createdAt.toDate().toLocaleDateString() : new Date(quote.createdAt).toLocaleDateString()) : 'N/A'}`, 14, startY + 18);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: startY + 30,
       head: [['Descripción', 'Cant.', 'Precio', 'Subtotal']],
       body: quote.items.map((i: any) => [
@@ -227,15 +231,15 @@ export default function Quotes() {
     doc.setFontSize(14);
     doc.text("Historial de Presupuestos", headerX, headerY + 10);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: Math.max(headerY + 25, 55),
       head: [['Fecha', 'Cliente', 'Vehículo', 'Servicio', 'Total']],
       body: quotes.map(q => [
         q.createdAt ? (q.createdAt.toDate ? q.createdAt.toDate().toLocaleDateString() : new Date(q.createdAt).toLocaleDateString()) : 'N/A',
-        q.client_name || q.clientName,
-        `${q.vehicle_make || q.vehicleMake} ${q.vehicle_model || q.vehicleModel}`,
-        q.service_type || q.serviceType,
-        `$${q.total}`
+        q.client_name || q.clientName || 'N/A',
+        `${q.vehicle_make || q.vehicleMake || ''} ${q.vehicle_model || q.vehicleModel || ''}`,
+        q.service_type || q.serviceType || 'Varios',
+        `$${q.total || 0}`
       ]),
       headStyles: { fillColor: config?.button_color || '#000000' }
     });

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 // import { db } from '../lib/firebase';
 // import { collection, query, onSnapshot, orderBy, where, doc, updateDoc, deleteDoc, getDocs } from 'firebase/firestore';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { mockDb } from '../lib/mockData';
 import { loadLogoToDoc } from '../lib/pdfUtils';
 
@@ -78,6 +78,16 @@ export default function ClientsList() {
     setView('details');
   };
 
+  useEffect(() => {
+    const handleExportEvent = (e: any) => {
+      const client = e.detail;
+      setSelectedClient(client);
+      setTimeout(() => exportToPDF(), 100);
+    };
+    window.addEventListener('exportClientPDF', handleExportEvent);
+    return () => window.removeEventListener('exportClientPDF', handleExportEvent);
+  }, [clients]);
+
   const handleUpdateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClient) return;
@@ -104,6 +114,42 @@ export default function ClientsList() {
         alert("Error al eliminar cliente");
       }
     }
+  };
+
+  const exportAllClientsToPDF = async () => {
+    const doc = new jsPDF() as any;
+    const settings = await mockDb.get('settings');
+    const config = settings?.[0];
+    
+    let headerX = 14;
+    let headerY = 20;
+
+    if (config?.logo_url) {
+      const logo: any = await loadLogoToDoc(doc, config.logo_url);
+      if (logo) {
+        headerX = 14 + logo.width + 5;
+        headerY = 10 + (logo.height / 2) + 2;
+      }
+    }
+    
+    doc.setFontSize(20);
+    doc.text(config?.app_name || "Tafer Servicios", headerX, headerY);
+    doc.setFontSize(14);
+    doc.text("Directorio de Clientes", headerX, headerY + 10);
+    
+    autoTable(doc, {
+      startY: Math.max(headerY + 25, 50),
+      head: [['Nombre', 'Teléfono', 'Vehículo', 'Dirección']],
+      body: clients.map(c => [
+        c.name,
+        c.phone,
+        `${c.vehicle_make || ''} ${c.vehicle_model || ''}`,
+        c.address || 'N/A'
+      ]),
+      headStyles: { fillColor: config?.button_color || '#000000' }
+    });
+    
+    doc.save('Directorio_Clientes.pdf');
   };
 
   const exportToPDF = async () => {
@@ -147,7 +193,7 @@ export default function ClientsList() {
       q.status || 'N/A'
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: tableStartY + 5,
       head: [['Fecha', 'Servicio', 'Total', 'Estado']],
       body: quoteData,
@@ -163,7 +209,7 @@ export default function ClientsList() {
       a.notes || ''
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: finalY + 5,
       head: [['Fecha', 'Hora', 'Servicio', 'Descripción']],
       body: apptData,
@@ -188,17 +234,25 @@ export default function ClientsList() {
             exit={{ opacity: 0, x: 20 }}
             className="space-y-6"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-bold text-dark tracking-tight">Directorio de Clientes</h2>
                 <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">Gestión y búsqueda rápida</p>
               </div>
-              <button 
-                onClick={() => setView('new')}
-                className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
-              >
-                <Plus className="w-4 h-4" /> Agregar Cliente
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={exportAllClientsToPDF}
+                  className="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-50 transition-all shadow-sm text-sm"
+                >
+                  <Download className="w-4 h-4" /> PDF Lista
+                </button>
+                <button 
+                  onClick={() => setView('new')}
+                  className="bg-dark text-white px-5 py-2.5 rounded-lg font-bold flex items-center gap-2 hover:bg-gray-800 transition-all shadow-sm text-sm"
+                >
+                  <Plus className="w-4 h-4" /> Agregar Cliente
+                </button>
+              </div>
             </div>
 
             <div className="relative">
@@ -494,7 +548,18 @@ function ClientCard({ client, onClick, onDelete }: { client: any, onClick: () =>
         <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-dark font-bold border border-gray-100 group-hover:bg-dark group-hover:text-white group-hover:border-dark transition-all duration-300">
           {client.name ? client.name[0] : <User className="w-4 h-4" />}
         </div>
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all -translate-x-2 group-hover:translate-x-0">
+        <div className="flex gap-2">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              const exportEv = new CustomEvent('exportClientPDF', { detail: client });
+              window.dispatchEvent(exportEv);
+            }}
+            className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-dark hover:text-white transition-all"
+            title="Exportar PDF Individual"
+          >
+            <Download className="w-4 h-4" />
+          </button>
           <button 
             onClick={onDelete}
             className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-500 hover:bg-red-500 hover:text-white transition-all"
