@@ -118,9 +118,9 @@ export default function AppointmentCalendar() {
         period: 'AM',
         notes: ''
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving appointment:", error);
-      alert("Error al guardar la cita");
+      alert(`Error al guardar la cita: ${error.message || 'Verifica la consola para más detalles'}`);
     } finally {
       setLoading(false);
     }

@@ -107,7 +107,7 @@ export default function Quotes() {
         vehicle_model: vehicleModel,
         service_type: serviceType,
         items,
-        total,
+        total: parseFloat(total.toString()),
         status: 'sent',
       };
 
@@ -131,9 +131,9 @@ export default function Quotes() {
 
       setView('list');
       resetForm();
-    } catch (error) {
-      console.error(error);
-      alert("Error al guardar presupuesto");
+    } catch (error: any) {
+      console.error("Error saving quote:", error);
+      alert(`Error al guardar presupuesto: ${error.message || 'Error técnico'}`);
     } finally {
       setLoading(false);
     }

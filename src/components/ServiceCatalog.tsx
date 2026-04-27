@@ -60,9 +60,9 @@ export default function ServiceCatalog() {
         estimatedDuration: '', 
         category: 'Mantenimiento'
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving service:", error);
-      alert("Error al guardar el servicio");
+      alert(`Error al guardar el servicio: ${error.message || 'Detalle no disponible'}`);
     } finally {
       setLoading(false);
     }
