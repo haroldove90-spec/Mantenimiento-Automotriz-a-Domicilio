@@ -45,6 +45,8 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='clients' AND column_name='vehicle_model') THEN
         ALTER TABLE clients ADD COLUMN vehicle_model TEXT;
     END IF;
+    -- Eliminar la restricción única de teléfono si existe
+    ALTER TABLE clients DROP CONSTRAINT IF EXISTS clients_phone_key;
 END $$;
 
 -- 3. Citas de Calendario
