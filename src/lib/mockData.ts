@@ -35,6 +35,9 @@ export const mockDb = {
 
       if (error) {
         console.error(`Error adding to ${collection}:`, error.message, error.details);
+        if (error.message.includes('Invalid path')) {
+          console.error("DEBUG: La URL de Supabase parece incorrecta o las tablas no existen.");
+        }
         throw error;
       }
       return {
