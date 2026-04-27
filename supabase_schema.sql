@@ -76,6 +76,12 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='vehicle_info') THEN
         ALTER TABLE appointments ADD COLUMN vehicle_info TEXT;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='notes') THEN
+        ALTER TABLE appointments ADD COLUMN notes TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='appointments' AND column_name='service_type') THEN
+        ALTER TABLE appointments ADD COLUMN service_type TEXT;
+    END IF;
 END $$;
 
 -- 4. Presupuestos (Quotes)
